@@ -41,6 +41,19 @@ export type ApplicationDocumentLink = {
   url: string;
 };
 
+export type Announcement = {
+  id: string;
+  title: string;
+  body: string;
+  published_at: string;
+  created_by: string;
+  email_status: "pending" | "sent" | "failed";
+  email_sent_at: string | null;
+  email_error: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type EducationalAssistanceApplicationInsert = Omit<
   EducationalAssistanceApplication,
   "id" | "submitted_at" | "review_notes" | "reviewed_at" | "reviewed_by"
@@ -90,6 +103,37 @@ export type Database = {
         Update: Partial<{
           user_id: string;
           created_at: string;
+        }>;
+        Relationships: [];
+      };
+      announcements: {
+        Row: Announcement;
+        Insert: Omit<Announcement, "id" | "created_at" | "updated_at"> & {
+          id?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Omit<Announcement, "id" | "created_at">>;
+        Relationships: [];
+      };
+      announcement_subscribers: {
+        Row: {
+          user_id: string;
+          email: string;
+          subscribed: boolean;
+          updated_at: string;
+        };
+        Insert: {
+          user_id: string;
+          email: string;
+          subscribed?: boolean;
+          updated_at?: string;
+        };
+        Update: Partial<{
+          user_id: string;
+          email: string;
+          subscribed: boolean;
+          updated_at: string;
         }>;
         Relationships: [];
       };

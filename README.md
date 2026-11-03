@@ -57,6 +57,28 @@ dashboard at `/admin`.
    create that account.
 5. Restart the development server after changing environment variables.
 
+To activate announcements, open the Supabase SQL Editor and run
+`supabase/announcements.sql`. This repeatable setup creates the announcement
+and resident email preference tables, their access policies, and refreshes the
+API schema cache. If the administrator cannot publish after running it, add the
+confirmed admin account to `portal_admins` once, replacing the email below:
+
+```sql
+insert into public.portal_admins (user_id)
+select id
+from auth.users
+where lower(email) = lower('ADMIN_EMAIL_HERE')
+on conflict (user_id) do nothing;
+```
+
+Public announcements display on the landing page. Residents can opt in to
+announcement emails from their dashboard. To enable email delivery, configure a
+Resend account and verify the sender domain/address. Set `RESEND_API_KEY` and
+`ANNOUNCEMENT_FROM_EMAIL` in local environment settings and Vercel Environment
+Variables; never expose the API key with a `NEXT_PUBLIC_` prefix. If delivery
+fails, the announcement remains published and an administrator can retry
+notification after fixing the email setup.
+
 To enable Google sign-in, configure the Google OAuth client ID and secret in
 Supabase under Authentication → Providers → Google. Add the Supabase callback
 URL shown in the provider settings to the Google Cloud OAuth client's
@@ -105,5 +127,4 @@ assistance requires a school assessment and front/back school ID; jobseeker
 applications require front/back of a valid ID. Documents accept JPG, PNG,
 WebP, or PDF files up to 5 MB each, are stored in the private
 `application-documents` bucket, and are available to the applicant and
-authorized administrators through temporary signed links. Announcement
-management remains unconnected.
+authorized administrators through temporary signed links.

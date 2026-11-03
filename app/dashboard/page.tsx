@@ -38,6 +38,8 @@ async function ResidentDashboard() {
   const [
     { data: educationApplications, error: educationApplicationsError },
     { data: jobseekerApplications, error: jobseekerApplicationsError },
+    { data: announcementSubscription, error: announcementSubscriptionError },
+    { data: announcements, error: announcementsError },
   ] = await Promise.all([
     supabase
       .from("educational_assistance_applications")
@@ -53,6 +55,18 @@ async function ResidentDashboard() {
       )
       .eq("user_id", data.user.id)
       .order("submitted_at", { ascending: false }),
+    supabase
+      .from("announcement_subscribers")
+      .select("subscribed")
+      .eq("user_id", data.user.id)
+      .maybeSingle(),
+    supabase
+      .from("announcements")
+      .select(
+        "id, title, body, published_at, created_by, email_status, email_sent_at, email_error, created_at, updated_at",
+      )
+      .not("published_at", "is", null)
+      .order("published_at", { ascending: false }),
   ]);
 
   return (
@@ -63,6 +77,10 @@ async function ResidentDashboard() {
       residentEducationApplicationsError={educationApplicationsError?.message}
       residentJobseekerApplications={jobseekerApplications ?? []}
       residentJobseekerApplicationsError={jobseekerApplicationsError?.message}
+      announcementSubscribed={announcementSubscription?.subscribed ?? false}
+      announcementSubscriptionError={announcementSubscriptionError?.message}
+      announcements={announcements ?? []}
+      announcementsError={announcementsError?.message}
     />
   );
 }

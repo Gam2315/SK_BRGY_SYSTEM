@@ -1,9 +1,15 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { signOut } from "@/app/actions/auth";
+import AdminAnnouncementManager from "@/components/admin-announcement-manager";
 import AdminApplicationReviewControls from "@/components/admin-application-review-controls";
 import ResidentApplicationForms from "@/components/resident-application-forms";
+import ResidentAnnouncementSubscription from "@/components/resident-announcement-subscription";
 import type {
+  Announcement,
   ApplicationDocumentLink,
   EducationalAssistanceApplication,
   JobseekerApplication,
@@ -28,15 +34,25 @@ type PortalDashboardProps = {
   residentEducationApplicationsError?: string;
   residentJobseekerApplications?: JobseekerApplication[];
   residentJobseekerApplicationsError?: string;
+  announcements?: Announcement[];
+  announcementsError?: string;
+  announcementSubscribed?: boolean;
+  announcementSubscriptionError?: string;
   role: "admin" | "resident";
 };
 
-const officialPositions = [
-  "Punong Barangay",
-  "Barangay Kagawad",
-  "Barangay Secretary",
-  "Barangay Treasurer",
-  "SK Chairperson",
+const adminNavigationSections = [
+  "services",
+  "announcements",
+  "educational-assistance",
+  "jobseeker-applicants",
+  "account",
+];
+const residentNavigationSections = [
+  "services",
+  "announcements",
+  "requests",
+  "account",
 ];
 
 export default function PortalDashboard({
@@ -49,10 +65,53 @@ export default function PortalDashboard({
   residentEducationApplicationsError,
   residentJobseekerApplications = [],
   residentJobseekerApplicationsError,
+  announcements = [],
+  announcementsError,
+  announcementSubscribed = false,
+  announcementSubscriptionError,
   role,
 }: PortalDashboardProps) {
   const isAdmin = role === "admin";
   const initials = email.slice(0, 1).toUpperCase();
+  const [activeSection, setActiveSection] = useState("overview");
+  const navigationSections = isAdmin
+    ? adminNavigationSections
+    : residentNavigationSections;
+
+  useEffect(() => {
+    let frame = 0;
+
+    function updateActiveSection() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const fixedHeader = document.querySelector(".dashboard-topbar");
+        const marker =
+          (fixedHeader?.getBoundingClientRect().bottom ?? 0) + 24;
+        let currentSection = "overview";
+
+        for (const id of navigationSections) {
+          const section = document.getElementById(id);
+          if (section && section.getBoundingClientRect().top <= marker) {
+            currentSection = id;
+          }
+        }
+
+        setActiveSection(currentSection);
+      });
+    }
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+    window.addEventListener("hashchange", updateActiveSection);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+      window.removeEventListener("hashchange", updateActiveSection);
+    };
+  }, [navigationSections]);
 
   return (
     <main className="portal-dashboard">
@@ -72,42 +131,79 @@ export default function PortalDashboard({
 
         <span className="dashboard-nav-label">MENU</span>
         <nav className="dashboard-nav" aria-label="Dashboard navigation">
-          <a className="dashboard-nav-link active" href="#overview">
+          <a
+            className={`dashboard-nav-link${activeSection === "overview" ? " active" : ""}`}
+            href="#overview"
+            onClick={() => setActiveSection("overview")}
+          >
             <span aria-hidden="true">▦</span> Overview
           </a>
           {isAdmin ? (
             <>
-              <a className="dashboard-nav-link" href="#services">
+              <a
+                className={`dashboard-nav-link${activeSection === "services" ? " active" : ""}`}
+                href="#services"
+                onClick={() => setActiveSection("services")}
+              >
                 <span aria-hidden="true">◇</span> Services
               </a>
-              <a className="dashboard-nav-link" href="#educational-assistance">
-                <span aria-hidden="true">▤</span> Education applicants
-              </a>
-              <a className="dashboard-nav-link" href="#jobseeker-applicants">
-                <span aria-hidden="true">♙</span> Jobseeker applicants
-              </a>
-              <a className="dashboard-nav-link" href="#announcements">
+              <a
+                className={`dashboard-nav-link${activeSection === "announcements" ? " active" : ""}`}
+                href="#announcements"
+                onClick={() => setActiveSection("announcements")}
+              >
                 <span aria-hidden="true">◉</span> Announcements
               </a>
-              <a className="dashboard-nav-link" href="#account">
+              <a
+                className={`dashboard-nav-link${activeSection === "educational-assistance" ? " active" : ""}`}
+                href="#educational-assistance"
+                onClick={() => setActiveSection("educational-assistance")}
+              >
+                <span aria-hidden="true">▤</span> Education applicants
+              </a>
+              <a
+                className={`dashboard-nav-link${activeSection === "jobseeker-applicants" ? " active" : ""}`}
+                href="#jobseeker-applicants"
+                onClick={() => setActiveSection("jobseeker-applicants")}
+              >
+                <span aria-hidden="true">♙</span> Jobseeker applicants
+              </a>
+              <a
+                className={`dashboard-nav-link${activeSection === "account" ? " active" : ""}`}
+                href="#account"
+                onClick={() => setActiveSection("account")}
+              >
                 <span aria-hidden="true">◎</span> Account
               </a>
             </>
           ) : (
             <>
-              <a className="dashboard-nav-link" href="#services">
+              <a
+                className={`dashboard-nav-link${activeSection === "services" ? " active" : ""}`}
+                href="#services"
+                onClick={() => setActiveSection("services")}
+              >
                 <span aria-hidden="true">◇</span> Browse services
               </a>
-              <a className="dashboard-nav-link" href="#requests">
-                <span aria-hidden="true">▤</span> Applications
-              </a>
-              <a className="dashboard-nav-link" href="#announcements">
+              <a
+                className={`dashboard-nav-link${activeSection === "announcements" ? " active" : ""}`}
+                href="#announcements"
+                onClick={() => setActiveSection("announcements")}
+              >
                 <span aria-hidden="true">◉</span> Announcements
               </a>
-              <a className="dashboard-nav-link" href="#officials">
-                <span aria-hidden="true">♙</span> Barangay officials
+              <a
+                className={`dashboard-nav-link${activeSection === "requests" ? " active" : ""}`}
+                href="#requests"
+                onClick={() => setActiveSection("requests")}
+              >
+                <span aria-hidden="true">▤</span> Applications
               </a>
-              <a className="dashboard-nav-link" href="#account">
+              <a
+                className={`dashboard-nav-link${activeSection === "account" ? " active" : ""}`}
+                href="#account"
+                onClick={() => setActiveSection("account")}
+              >
                 <span aria-hidden="true">◎</span> Account
               </a>
             </>
@@ -180,6 +276,8 @@ export default function PortalDashboard({
               applicationsError={educationApplicationsError}
               jobseekerApplications={jobseekerApplications}
               jobseekerApplicationsError={jobseekerApplicationsError}
+              announcements={announcements}
+              announcementsError={announcementsError}
             />
           ) : (
             <ResidentOverview
@@ -188,6 +286,10 @@ export default function PortalDashboard({
               educationApplicationsError={residentEducationApplicationsError}
               jobseekerApplications={residentJobseekerApplications}
               jobseekerApplicationsError={residentJobseekerApplicationsError}
+              announcementSubscribed={announcementSubscribed}
+              announcementSubscriptionError={announcementSubscriptionError}
+              announcements={announcements}
+              announcementsError={announcementsError}
             />
           )}
 
@@ -227,11 +329,15 @@ function AdminOverview({
   applicationsError,
   jobseekerApplications,
   jobseekerApplicationsError,
+  announcements,
+  announcementsError,
 }: {
   applications: EducationApplicationWithDocuments[];
   applicationsError?: string;
   jobseekerApplications: JobseekerApplicationWithDocuments[];
   jobseekerApplicationsError?: string;
+  announcements: Announcement[];
+  announcementsError?: string;
 }) {
   const highSchoolApplications = applications.filter(
     (application) => application.education_level === "high_school",
@@ -253,9 +359,14 @@ function AdminOverview({
             management tools can be connected here as the barangay workflow is
             finalized.
           </p>
-          <Link className="admin-public-link" href="/">
-            View public portal <span aria-hidden="true">→</span>
-          </Link>
+          <div className="admin-welcome-actions">
+            <Link className="admin-public-link" href="/">
+              View public portal <span aria-hidden="true">→</span>
+            </Link>
+            <a className="admin-compose-link" href="#announcement-composer">
+              Compose announcement <span aria-hidden="true">＋</span>
+            </a>
+          </div>
         </div>
         <div className="admin-welcome-seal" aria-hidden="true">
           <Image
@@ -290,25 +401,30 @@ function AdminOverview({
             View service listings <span aria-hidden="true">→</span>
           </Link>
         </article>
-        <article className="admin-tool-card" id="announcements">
+        <article className="admin-tool-card">
           <span className="admin-tool-icon gold" aria-hidden="true">
             ◉
           </span>
           <span className="admin-tool-label">COMMUNITY UPDATES</span>
           <h3>Announcements</h3>
           <p>
-            Visit the public updates section and see the current community
-            notice.
+            Publish updates to the public landing page and notify residents who
+            opted in to announcement emails.
           </p>
-          <Link href="/#announcements">
-            View announcements <span aria-hidden="true">→</span>
-          </Link>
+          <a href="#announcements">
+            Manage announcements <span aria-hidden="true">→</span>
+          </a>
         </article>
       </div>
       <p className="dashboard-data-note">
         <span aria-hidden="true">i</span>
         Application records are private to authorized portal administrators.
       </p>
+
+      <AdminAnnouncementManager
+        announcements={announcements}
+        error={announcementsError}
+      />
 
       <section
         className="admin-applications-section"
@@ -569,12 +685,20 @@ function ResidentOverview({
   educationApplicationsError,
   jobseekerApplications,
   jobseekerApplicationsError,
+  announcementSubscribed,
+  announcementSubscriptionError,
+  announcements,
+  announcementsError,
 }: {
   email: string;
   educationApplications: EducationalAssistanceApplication[];
   educationApplicationsError?: string;
   jobseekerApplications: JobseekerApplication[];
   jobseekerApplicationsError?: string;
+  announcementSubscribed: boolean;
+  announcementSubscriptionError?: string;
+  announcements: Announcement[];
+  announcementsError?: string;
 }) {
   const applicationUpdates = [
     ...educationApplications.map((application) => ({
@@ -677,6 +801,56 @@ function ResidentOverview({
         </Link>
       </div>
 
+      <section className="resident-community-section" id="announcements">
+        <div className="dashboard-section-title">
+          <div>
+            <span className="section-kicker">FROM YOUR BARANGAY</span>
+            <h2>Updates &amp; announcements</h2>
+          </div>
+          <span className="dashboard-section-note">Community bulletin</span>
+        </div>
+        {announcementsError ? (
+          <p className="resident-application-load-error" role="alert">
+            Could not load announcements: {announcementsError}. Run the latest
+            application and announcement setup SQL in Supabase.
+          </p>
+        ) : announcements.length === 0 ? (
+          <div className="resident-empty-state resident-bulletin-empty">
+            <span className="resident-empty-icon" aria-hidden="true">◉</span>
+            <div>
+              <strong>No announcements have been published here yet</strong>
+              <p>
+                New notices and community updates will appear in this space.
+                Please check the public bulletin or contact the barangay hall.
+              </p>
+              <Link href="/#announcements">Visit the public bulletin →</Link>
+            </div>
+          </div>
+        ) : (
+          <ul className="resident-announcement-list">
+            {announcements.map((announcement) => (
+              <li key={announcement.id}>
+                <div>
+                  <strong>{announcement.title}</strong>
+                  <p>{announcement.body}</p>
+                </div>
+                <time dateTime={announcement.published_at}>
+                  {new Intl.DateTimeFormat("en-PH", {
+                    dateStyle: "medium",
+                    timeZone: "Asia/Manila",
+                  }).format(new Date(announcement.published_at))}
+                </time>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <ResidentAnnouncementSubscription
+        subscribed={announcementSubscribed}
+        error={announcementSubscriptionError}
+      />
+
       <section className="resident-requests-card" id="requests">
         <div className="dashboard-panel-heading">
           <div>
@@ -731,7 +905,7 @@ function ResidentOverview({
             ))}
           </ul>
         )}
-        {applicationLoadErrors.length > 0 ? null : (
+        {applicationLoadErrors.length === 0 && (
           <div className="resident-application-form-link">
             <Link href="#apply-heading">Apply for assistance ↓</Link>
           </div>
@@ -740,58 +914,6 @@ function ResidentOverview({
 
       <ResidentApplicationForms />
 
-      <section className="resident-community-section" id="announcements">
-        <div className="dashboard-section-title">
-          <div>
-            <span className="section-kicker">FROM YOUR BARANGAY</span>
-            <h2>Updates &amp; announcements</h2>
-          </div>
-          <span className="dashboard-section-note">Community bulletin</span>
-        </div>
-        <div className="resident-empty-state resident-bulletin-empty">
-          <span className="resident-empty-icon" aria-hidden="true">◉</span>
-          <div>
-            <strong>No announcements have been published here yet</strong>
-            <p>
-              New notices and community updates will appear in this space.
-              Please check the barangay&apos;s public bulletin or contact the
-              barangay hall for current announcements.
-            </p>
-            <Link href="/#announcements">Visit the public bulletin →</Link>
-          </div>
-        </div>
-      </section>
-
-      <section className="resident-officials-section" id="officials">
-        <div className="dashboard-section-title">
-          <div>
-            <span className="section-kicker">YOUR LOCAL LEADERS</span>
-            <h2>Barangay officials</h2>
-          </div>
-          <span className="dashboard-section-note">Centro Norte</span>
-        </div>
-        <div className="resident-officials-card">
-          <p className="resident-officials-note">
-            The official names and contact details have not been published in
-            this portal yet. Please contact the barangay hall to confirm the
-            current roster.
-          </p>
-          <ul className="resident-officials-list">
-            {officialPositions.map((position) => (
-              <li key={position}>
-                <span className="officials-role-icon" aria-hidden="true">♙</span>
-                <span>
-                  <strong>{position}</strong>
-                  <small>Official details not yet published</small>
-                </span>
-              </li>
-            ))}
-          </ul>
-          <Link className="resident-officials-contact" href="/#contact">
-            Contact the barangay hall →
-          </Link>
-        </div>
-      </section>
     </>
   );
 }

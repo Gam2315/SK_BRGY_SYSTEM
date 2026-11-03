@@ -39,6 +39,7 @@ async function AdminDashboard() {
   const [
     { data: applications, error: applicationsError },
     { data: jobseekerApplications, error: jobseekerApplicationsError },
+    { data: announcements, error: announcementsError },
   ] = await Promise.all([
     supabase
       .from("educational_assistance_applications")
@@ -52,6 +53,12 @@ async function AdminDashboard() {
         "id, user_id, applicant_name, applicant_email, contact_number, desired_position, skills_experience, valid_id_front_path, valid_id_back_path, status, review_notes, reviewed_at, reviewed_by, submitted_at",
       )
       .order("submitted_at", { ascending: false }),
+    supabase
+      .from("announcements")
+      .select(
+        "id, title, body, published_at, created_by, email_status, email_sent_at, email_error, created_at, updated_at",
+      )
+      .order("published_at", { ascending: false }),
   ]);
 
   const educationApplicationsWithDocuments = await Promise.all(
@@ -98,6 +105,8 @@ async function AdminDashboard() {
       educationApplicationsError={applicationsError?.message}
       jobseekerApplications={jobseekerApplicationsWithDocuments}
       jobseekerApplicationsError={jobseekerApplicationsError?.message}
+      announcements={announcements ?? []}
+      announcementsError={announcementsError?.message}
     />
   );
 }

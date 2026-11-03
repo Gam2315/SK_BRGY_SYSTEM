@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState, ViewTransition } from "react";
+import { useEffect, useMemo, useState, ViewTransition } from "react";
 
 type IconName =
   | "arrow"
@@ -24,6 +24,15 @@ type Service = {
   icon: IconName;
   name: string;
 };
+
+type PublicAnnouncement = {
+  id: string;
+  title: string;
+  body: string;
+  published_at: string;
+};
+
+type LandingSection = "home" | "services" | "announcements" | "officials" | "about";
 
 const services: Service[] = [
   {
@@ -65,6 +74,14 @@ const services: Service[] = [
 ];
 
 const categories = ["All services", "Certificates", "Community"];
+
+const officialPositions = [
+  "Punong Barangay",
+  "Barangay Kagawad",
+  "Barangay Secretary",
+  "Barangay Treasurer",
+  "SK Chairperson",
+];
 
 function Icon({
   name,
@@ -162,6 +179,50 @@ function Icon({
 export default function Home() {
   const [query, setQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("All services");
+  const [activeSection, setActiveSection] = useState<LandingSection>("home");
+  const [announcements, setAnnouncements] = useState<PublicAnnouncement[]>([]);
+  const [announcementLoadError, setAnnouncementLoadError] = useState("");
+
+  useEffect(() => {
+    const sectionIds: LandingSection[] = [
+      "home",
+      "services",
+      "announcements",
+      "officials",
+      "about",
+    ];
+    let frame = 0;
+
+    function updateActiveSection() {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        const header = document.querySelector(".site-header-shell");
+        const marker = window.scrollY + (header?.getBoundingClientRect().height ?? 0) + 24;
+        let currentSection: LandingSection = "home";
+
+        for (const id of sectionIds) {
+          const section = document.getElementById(id);
+          if (section && section.getBoundingClientRect().top + window.scrollY <= marker) {
+            currentSection = id;
+          }
+        }
+
+        setActiveSection(currentSection);
+      });
+    }
+
+    updateActiveSection();
+    window.addEventListener("scroll", updateActiveSection, { passive: true });
+    window.addEventListener("resize", updateActiveSection);
+    window.addEventListener("hashchange", updateActiveSection);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", updateActiveSection);
+      window.removeEventListener("resize", updateActiveSection);
+      window.removeEventListener("hashchange", updateActiveSection);
+    };
+  }, []);
 
   const visibleServices = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -180,68 +241,122 @@ export default function Home() {
     });
   }, [activeCategory, query]);
 
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadAnnouncements() {
+      try {
+        const response = await fetch("/api/announcements", {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          setAnnouncementLoadError(
+            "Published announcements are temporarily unavailable.",
+          );
+          return;
+        }
+        const result = (await response.json()) as {
+          announcements?: PublicAnnouncement[];
+        };
+        setAnnouncements(result.announcements ?? []);
+      } catch (error) {
+        if (error instanceof Error && error.name !== "AbortError") {
+          setAnnouncementLoadError(
+            "Published announcements are temporarily unavailable.",
+          );
+        }
+      }
+    }
+
+    void loadAnnouncements();
+    return () => controller.abort();
+  }, []);
+
   return (
     <>
-      <div className="gov-strip">
-        <div className="container gov-strip-inner">
-          <div className="gov-identity">
-            <Image
-              className="gov-flag"
-              src="/Flag_of_the_Philippines.svg"
-              alt=""
-              aria-hidden="true"
-              width={24}
-              height={16}
-            />
-            <span>Republic of the Philippines</span>
-            <span className="gov-divider" />
-            <span>Official local government portal</span>
+      <div className="site-header-shell">
+        <div className="gov-strip">
+          <div className="container gov-strip-inner">
+            <div className="gov-identity">
+              <Image
+                className="gov-flag"
+                src="/Flag_of_the_Philippines.svg"
+                alt=""
+                aria-hidden="true"
+                width={24}
+                height={16}
+              />
+              <span>Republic of the Philippines</span>
+              <span className="gov-divider" />
+              <span>Official local government portal</span>
+            </div>
           </div>
-          <a className="gov-link" href="#about">
-            About this portal <Icon name="chevron" size={14} />
-          </a>
         </div>
+
+        <header className="site-header">
+          <div className="container header-inner">
+            <a className="brand" href="#home" aria-label="Barangay Portal home">
+              <Image
+                className="brand-logo"
+                src="/centro-norte-logo.png"
+                alt="Barangay Centro Norte seal"
+                width={52}
+                height={52}
+                priority
+              />
+              <span className="brand-copy">
+                <strong>Barangay Portal</strong>
+                <span>Serbisyong malapit sa iyo</span>
+              </span>
+            </a>
+
+            <nav className="main-nav" aria-label="Main navigation">
+              <a
+                className={`nav-link${activeSection === "home" ? " active" : ""}`}
+                href="#home"
+                onClick={() => setActiveSection("home")}
+              >
+                Home
+              </a>
+              <a
+                className={`nav-link${activeSection === "services" ? " active" : ""}`}
+                href="#services"
+                onClick={() => setActiveSection("services")}
+              >
+                Services
+              </a>
+              <a
+                className={`nav-link${activeSection === "announcements" ? " active" : ""}`}
+                href="#announcements"
+                onClick={() => setActiveSection("announcements")}
+              >
+                Announcements
+              </a>
+              <a
+                className={`nav-link${activeSection === "officials" ? " active" : ""}`}
+                href="#officials"
+                onClick={() => setActiveSection("officials")}
+              >
+                Officials
+              </a>
+              <a
+                className={`nav-link${activeSection === "about" ? " active" : ""}`}
+                href="#about"
+                onClick={() => setActiveSection("about")}
+              >
+                About
+              </a>
+            </nav>
+
+            <Link className="header-cta" href="/login">
+              Sign in <Icon name="arrow" size={16} />
+            </Link>
+          </div>
+        </header>
       </div>
+      <div className="site-header-spacer" aria-hidden="true" />
 
-      <header className="site-header">
-        <div className="container header-inner">
-          <a className="brand" href="#home" aria-label="Barangay Portal home">
-            <Image
-              className="brand-logo"
-              src="/centro-norte-logo.png"
-              alt="Barangay Centro Norte seal"
-              width={52}
-              height={52}
-              priority
-            />
-            <span className="brand-copy">
-              <strong>Barangay Portal</strong>
-              <span>Serbisyong malapit sa iyo</span>
-            </span>
-          </a>
-
-          <nav className="main-nav" aria-label="Main navigation">
-            <a className="nav-link active" href="#home">
-              Home
-            </a>
-            <a className="nav-link" href="#services">
-              Services
-            </a>
-            <a className="nav-link" href="#announcements">
-              Announcements
-            </a>
-            <a className="nav-link" href="#about">
-              About
-            </a>
-          </nav>
-
-          <Link className="header-cta" href="/login">
-            Sign in <Icon name="arrow" size={16} />
-          </Link>
-        </div>
-      </header>
-
-      <main>
+      <main className="main-content">
         <section className="hero-section" id="home">
           <Image
             className="hero-background"
@@ -411,27 +526,100 @@ export default function Home() {
               </a>
             </div>
 
-            <div className="announcement-card">
-              <div className="announcement-topline">
-                <span className="announcement-badge">
-                  <Icon name="megaphone" size={14} /> COMMUNITY NOTICE
-                </span>
-                <span className="announcement-date">
-                  <Icon name="calendar" size={14} /> Stay informed
-                </span>
+            <div className="announcement-feed">
+              {announcements.length > 0 ? (
+                announcements.map((announcement) => (
+                  <article className="announcement-card" key={announcement.id}>
+                    <div className="announcement-topline">
+                      <span className="announcement-badge">
+                        <Icon name="megaphone" size={14} /> COMMUNITY NOTICE
+                      </span>
+                      <time
+                        className="announcement-date"
+                        dateTime={announcement.published_at}
+                      >
+                        <Icon name="calendar" size={14} />
+                        {new Intl.DateTimeFormat("en-PH", {
+                          dateStyle: "medium",
+                          timeZone: "Asia/Manila",
+                        }).format(new Date(announcement.published_at))}
+                      </time>
+                    </div>
+                    <h3>{announcement.title}</h3>
+                    <p className="published-announcement-body">
+                      {announcement.body}
+                    </p>
+                    <div className="announcement-watermark" aria-hidden="true">
+                      <Icon name="megaphone" size={102} strokeWidth={1} />
+                    </div>
+                  </article>
+                ))
+              ) : announcementLoadError ? (
+                <p className="public-announcement-error" role="status">
+                  {announcementLoadError}
+                </p>
+              ) : (
+                <article className="announcement-card">
+                  <div className="announcement-topline">
+                    <span className="announcement-badge">
+                      <Icon name="megaphone" size={14} /> COMMUNITY NOTICE
+                    </span>
+                    <span className="announcement-date">
+                      <Icon name="calendar" size={14} /> Stay informed
+                    </span>
+                  </div>
+                  <h3>Important updates, right where you need them.</h3>
+                  <p>
+                    Barangay announcements and community schedules will be
+                    shared here. Visit or contact your barangay hall for the
+                    latest information.
+                  </p>
+                  <a className="announcement-link" href="#contact">
+                    Contact your barangay <Icon name="arrow" size={15} />
+                  </a>
+                  <div className="announcement-watermark" aria-hidden="true">
+                    <Icon name="megaphone" size={102} strokeWidth={1} />
+                  </div>
+                </article>
+              )}
+            </div>
+          </div>
+        </section>
+
+        <section className="officials-section section-pad" id="officials">
+          <div className="container">
+            <div className="section-heading">
+              <div>
+                <span className="section-kicker">YOUR LOCAL LEADERS</span>
+                <h2>Barangay officials</h2>
+                <p>
+                  Meet the officials serving Barangay Centro Norte.
+                </p>
               </div>
-              <h3>Important updates, right where you need them.</h3>
-              <p>
-                Barangay announcements and community schedules will be shared
-                here. Visit or contact your barangay hall for the latest
-                information.
+              <span className="officials-location-label">Centro Norte</span>
+            </div>
+            <div className="officials-card">
+              <p className="officials-note">
+                Official names and contact details have not been published in
+                this portal yet. Please contact the barangay hall to confirm
+                the current roster.
               </p>
-              <a className="announcement-link" href="#contact">
-                Contact your barangay <Icon name="arrow" size={15} />
+              <ul className="officials-list">
+                {officialPositions.map((position) => (
+                  <li key={position}>
+                    <span className="officials-role-icon" aria-hidden="true">
+                      ♙
+                    </span>
+                    <span>
+                      <strong>{position}</strong>
+                      <small>Official details not yet published</small>
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <a className="officials-contact" href="#contact">
+                Contact the barangay hall <Icon name="arrow" size={15} />
               </a>
-              <div className="announcement-watermark" aria-hidden="true">
-                <Icon name="megaphone" size={102} strokeWidth={1} />
-              </div>
             </div>
           </div>
         </section>
@@ -449,7 +637,7 @@ export default function Home() {
                 connect with your barangay, wherever you are.
               </p>
             </div>
-            <a className="about-button" href="#contact">
+            <a className="about-button" href="/login">
               Connect with us <Icon name="arrow" size={16} />
             </a>
             <div className="about-decoration" aria-hidden="true" />
@@ -481,19 +669,16 @@ export default function Home() {
 
           <div className="footer-column">
             <strong>Explore</strong>
-            <a href="#services">Local services</a>
-            <a href="#announcements">Announcements</a>
             <a href="#about">About the portal</a>
           </div>
 
           <div className="footer-column footer-contact">
             <strong>Visit your barangay hall</strong>
             <span>
-              <Icon name="location" size={16} /> Contact your local barangay
-              office for its address.
+              <Icon name="location" size={16} /> 3507 Centro Norte, Alcala, Cagayan, 
             </span>
             <span>
-              <Icon name="clock" size={16} /> Office hours vary by barangay.
+              <Icon name="clock" size={16} /> Mon - Fri: 8:00 AM - 5:00 PM
             </span>
           </div>
         </div>
