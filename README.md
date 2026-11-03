@@ -57,8 +57,53 @@ dashboard at `/admin`.
    create that account.
 5. Restart the development server after changing environment variables.
 
+To enable Google sign-in, configure the Google OAuth client ID and secret in
+Supabase under Authentication → Providers → Google. Add the Supabase callback
+URL shown in the provider settings to the Google Cloud OAuth client's
+authorized redirect URIs. In Supabase Authentication URL Configuration, add
+each app origin (for example `http://localhost:3000` and the production URL)
+to the allowed redirect URLs. The app uses `/auth/callback` to complete sign-in
+and sends the configured administrator to `/admin`.
+
 Residents can register with email and password and must follow the confirmation
 email before signing in. Keep email confirmation enabled so public sign-up
 cannot claim the designated administrator email without access to its inbox.
-The dashboards are authenticated, but request tracking and editable
-announcements still need their data tables and management workflows.
+For confirmation email delivery beyond basic testing, configure a custom SMTP
+provider in Supabase under Authentication → SMTP Settings. Supabase's default
+mailer is restricted to authorized team addresses and has strict rate limits;
+check the Auth logs and the recipient's spam folder if a confirmation message
+does not arrive.
+The admin dashboard can show educational assistance applications in separate
+high school and college lists, along with a jobseeker applicant list. To create
+or update the tables and their row-level security policies, run
+`supabase/educational-assistance.sql` in the Supabase SQL Editor. This script
+can be rerun safely to add applicant ownership and resident submission
+permissions, private document storage bucket, storage policies, and admin
+review permissions to an existing setup. Run the latest version before using
+the application review controls. Then allow
+the admin account to read the applications and private documents by running
+this query there, replacing the email with the confirmed admin account email:
+
+```sql
+insert into public.portal_admins (user_id)
+select id
+from auth.users
+where lower(email) = lower('ADMIN_EMAIL_HERE')
+on conflict (user_id) do nothing;
+```
+
+Residents can submit educational assistance and jobseeker applications from
+their dashboard after signing in. Each application is linked to the signed-in
+account, and residents can see their own submission status. Application rows
+are readable by the applicant and signed-in users listed in `portal_admins`;
+only applicants can create their own rows. Administrators listed in
+`portal_admins` can approve or reject either type and optionally leave a note
+visible to the applicant. The automatic completeness check confirms only that
+required information and document uploads are present; administrators must
+review document contents and make the final eligibility decision. Educational
+assistance requires a school assessment and front/back school ID; jobseeker
+applications require front/back of a valid ID. Documents accept JPG, PNG,
+WebP, or PDF files up to 5 MB each, are stored in the private
+`application-documents` bucket, and are available to the applicant and
+authorized administrators through temporary signed links. Announcement
+management remains unconnected.

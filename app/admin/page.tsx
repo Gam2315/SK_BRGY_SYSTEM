@@ -1,6 +1,8 @@
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import PortalDashboard from "@/components/portal-dashboard";
+import { createApplicationDocumentLinks } from "@/lib/supabase/application-documents";
 import { getSupabaseConfig, isAdminEmail } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -13,6 +15,8 @@ export default function AdminDashboardPage() {
 }
 
 async function AdminDashboard() {
+  await connection();
+
   if (!getSupabaseConfig()) {
     redirect("/login?error=setup");
   }
@@ -32,5 +36,68 @@ async function AdminDashboard() {
     redirect("/dashboard");
   }
 
-  return <PortalDashboard email={data.user.email} role="admin" />;
+  const [
+    { data: applications, error: applicationsError },
+    { data: jobseekerApplications, error: jobseekerApplicationsError },
+  ] = await Promise.all([
+    supabase
+      .from("educational_assistance_applications")
+      .select(
+        "id, user_id, applicant_name, applicant_email, contact_number, education_level, school_name, year_or_grade_level, school_assessment_path, school_id_front_path, school_id_back_path, status, review_notes, reviewed_at, reviewed_by, submitted_at",
+      )
+      .order("submitted_at", { ascending: false }),
+    supabase
+      .from("jobseeker_applications")
+      .select(
+        "id, user_id, applicant_name, applicant_email, contact_number, desired_position, skills_experience, valid_id_front_path, valid_id_back_path, status, review_notes, reviewed_at, reviewed_by, submitted_at",
+      )
+      .order("submitted_at", { ascending: false }),
+  ]);
+
+  const educationApplicationsWithDocuments = await Promise.all(
+    (applications ?? []).map(async (application) => {
+      const { links, errors } = await createApplicationDocumentLinks(
+        supabase,
+        [
+          { label: "School assessment", path: application.school_assessment_path },
+          { label: "School ID · front", path: application.school_id_front_path },
+          { label: "School ID · back", path: application.school_id_back_path },
+        ],
+      );
+
+      return {
+        ...application,
+        documents: links,
+        documentErrors: errors,
+      };
+    }),
+  );
+  const jobseekerApplicationsWithDocuments = await Promise.all(
+    (jobseekerApplications ?? []).map(async (application) => {
+      const { links, errors } = await createApplicationDocumentLinks(
+        supabase,
+        [
+          { label: "Valid ID · front", path: application.valid_id_front_path },
+          { label: "Valid ID · back", path: application.valid_id_back_path },
+        ],
+      );
+
+      return {
+        ...application,
+        documents: links,
+        documentErrors: errors,
+      };
+    }),
+  );
+
+  return (
+    <PortalDashboard
+      email={data.user.email}
+      role="admin"
+      educationApplications={educationApplicationsWithDocuments}
+      educationApplicationsError={applicationsError?.message}
+      jobseekerApplications={jobseekerApplicationsWithDocuments}
+      jobseekerApplicationsError={jobseekerApplicationsError?.message}
+    />
+  );
 }

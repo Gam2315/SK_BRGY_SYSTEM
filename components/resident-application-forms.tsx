@@ -1,0 +1,258 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import {
+  submitEducationalAssistanceApplication,
+  submitJobseekerApplication,
+  type ApplicationFormState,
+} from "@/app/actions/applications";
+
+const initialState: ApplicationFormState = {};
+const acceptedDocumentTypes = ".jpg,.jpeg,.png,.webp,.pdf";
+
+function DocumentUpload({
+  name,
+  title,
+}: {
+  name: string;
+  title: string;
+}) {
+  return (
+    <div className="application-document-field">
+      <label className="application-document-title" htmlFor={name}>
+        {title}
+      </label>
+      <input
+        accept={acceptedDocumentTypes}
+        id={name}
+        name={name}
+        required
+        type="file"
+      />
+      <small>Upload this document. Maximum file size: 5 MB.</small>
+    </div>
+  );
+}
+
+export default function ResidentApplicationForms() {
+  const [educationLevel, setEducationLevel] = useState("");
+  const [yearOrGradeLevel, setYearOrGradeLevel] = useState("");
+  const [educationState, educationAction, educationPending] = useActionState(
+    submitEducationalAssistanceApplication,
+    initialState,
+  );
+  const [jobseekerState, jobseekerAction, jobseekerPending] = useActionState(
+    submitJobseekerApplication,
+    initialState,
+  );
+
+  return (
+    <section className="resident-apply-section" aria-labelledby="apply-heading">
+      <div className="dashboard-section-title">
+        <div>
+          <span className="section-kicker">ONLINE APPLICATIONS</span>
+          <h2 id="apply-heading">Apply for assistance</h2>
+        </div>
+      </div>
+      <div className="resident-application-forms">
+        <details className="resident-application-form-card">
+          <summary>
+            <span>
+              <strong>Educational assistance</strong>
+              <small>Apply as a high school or college student</small>
+            </span>
+            <span className="application-form-toggle" aria-hidden="true">
+              +
+            </span>
+          </summary>
+          <form
+            action={educationAction}
+            className="resident-application-form"
+            encType="multipart/form-data"
+          >
+            <label>
+              Full name
+              <input
+                autoComplete="name"
+                maxLength={150}
+                name="applicant_name"
+                required
+              />
+            </label>
+            <label>
+              Contact number <span>(optional)</span>
+              <input
+                autoComplete="tel"
+                maxLength={40}
+                name="contact_number"
+                type="tel"
+              />
+            </label>
+            <label>
+              Education level
+              <select
+                name="education_level"
+                required
+                value={educationLevel}
+                onChange={(event) => {
+                  setEducationLevel(event.target.value);
+                  setYearOrGradeLevel("");
+                }}
+              >
+                <option disabled value="">
+                  Select your level
+                </option>
+                <option value="high_school">High school</option>
+                <option value="college">College</option>
+              </select>
+            </label>
+            <label>
+              School name
+              <input maxLength={200} name="school_name" required />
+            </label>
+            <label>
+              Year or grade level
+              <select
+                disabled={!educationLevel}
+                name="year_or_grade_level"
+                required
+                value={yearOrGradeLevel}
+                onChange={(event) => setYearOrGradeLevel(event.target.value)}
+              >
+                <option disabled value="">
+                  {educationLevel
+                    ? "Select your year or grade"
+                    : "Select your education level first"}
+                </option>
+                {educationLevel === "high_school" &&
+                  Array.from({ length: 6 }, (_, index) => index + 7).map(
+                    (grade) => (
+                      <option key={grade} value={`Grade ${grade}`}>
+                        Grade {grade}
+                      </option>
+                    ),
+                  )}
+                {educationLevel === "college" &&
+                  ["First", "Second", "Third", "Fourth", "Fifth"].map(
+                    (year) => (
+                      <option key={year} value={`${year} year`}>
+                        {year} year
+                      </option>
+                    ),
+                  )}
+              </select>
+            </label>
+            <div className="application-document-group">
+              <span className="application-document-heading">
+                Required documents
+              </span>
+              <DocumentUpload
+                name="school_assessment"
+                title="School assessment"
+              />
+              <DocumentUpload
+                name="school_id_front"
+                title="School ID · front"
+              />
+              <DocumentUpload
+                name="school_id_back"
+                title="School ID · back"
+              />
+            </div>
+            {educationState.error && (
+              <p className="application-form-message error" role="alert">
+                {educationState.error}
+              </p>
+            )}
+            {educationState.success && (
+              <p className="application-form-message success" role="status">
+                {educationState.success}
+              </p>
+            )}
+            <button disabled={educationPending} type="submit">
+              {educationPending ? "Submitting..." : "Submit application"}
+            </button>
+          </form>
+        </details>
+
+        <details className="resident-application-form-card">
+          <summary>
+            <span>
+              <strong>Jobseeker assistance</strong>
+              <small>Share your contact and employment interests</small>
+            </span>
+            <span className="application-form-toggle" aria-hidden="true">
+              +
+            </span>
+          </summary>
+          <form
+            action={jobseekerAction}
+            className="resident-application-form"
+            encType="multipart/form-data"
+          >
+            <label>
+              Full name
+              <input
+                autoComplete="name"
+                maxLength={150}
+                name="applicant_name"
+                required
+              />
+            </label>
+            <div className="application-document-group">
+              <span className="application-document-heading">
+                Required documents
+              </span>
+              <DocumentUpload
+                name="valid_id_front"
+                title="Valid ID · front"
+              />
+              <DocumentUpload
+                name="valid_id_back"
+                title="Valid ID · back"
+              />
+            </div>
+            <label>
+              Contact number <span>(optional)</span>
+              <input
+                autoComplete="tel"
+                maxLength={40}
+                name="contact_number"
+                type="tel"
+              />
+            </label>
+            <label>
+              Preferred position or type of work
+              <input maxLength={150} name="desired_position" required />
+            </label>
+            <label>
+              Skills or experience <span>(optional)</span>
+              <textarea
+                maxLength={2000}
+                name="skills_experience"
+                rows={3}
+              />
+            </label>
+            {jobseekerState.error && (
+              <p className="application-form-message error" role="alert">
+                {jobseekerState.error}
+              </p>
+            )}
+            {jobseekerState.success && (
+              <p className="application-form-message success" role="status">
+                {jobseekerState.success}
+              </p>
+            )}
+            <button disabled={jobseekerPending} type="submit">
+              {jobseekerPending ? "Submitting..." : "Submit application"}
+            </button>
+          </form>
+        </details>
+      </div>
+      <p className="resident-application-privacy">
+        Your email address is taken from your signed-in account. Application
+        details are only visible to you and authorized barangay administrators.
+      </p>
+    </section>
+  );
+}

@@ -77,7 +77,8 @@ export async function authenticate(
 
     return {
       mode,
-      notice: "Check your email for a confirmation link to finish creating your account.",
+      notice:
+        "Your account was created. Check your inbox and spam folder for the confirmation link. If no email arrives, configure a custom SMTP provider in Supabase Authentication settings; Supabase's default mailer has strict recipient and rate limits.",
     };
   }
 
@@ -99,6 +100,31 @@ export async function authenticate(
   }
 
   redirect(isAdminEmail(data.user.email) ? "/admin" : "/dashboard");
+}
+
+export async function signInWithGoogle() {
+  const supabaseConfig = getSupabaseConfig();
+
+  if (!supabaseConfig) {
+    redirect("/login?error=setup");
+  }
+
+  const supabase = await createClient({ writeCookies: true });
+  const redirectTo = new URL(
+    "/auth/callback",
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ).toString();
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: "google",
+    options: { redirectTo },
+  });
+
+  if (error) {
+    console.error("Could not start Google sign-in:", error.message);
+    redirect("/login?error=oauth");
+  }
+
+  redirect(data.url);
 }
 
 export async function signOut() {

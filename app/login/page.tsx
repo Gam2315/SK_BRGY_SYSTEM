@@ -6,6 +6,8 @@ import { getSupabaseConfig } from "@/lib/supabase/config";
 
 const errorMessages: Record<string, string> = {
   callback: "That confirmation link could not be verified. Please try again.",
+  oauth:
+    "Google sign-in could not be started. Check that Google is enabled in Supabase Authentication settings.",
   setup: "Sign-in is temporarily unavailable while the portal is configured.",
   signout: "We could not sign you out completely. Please try again.",
 };

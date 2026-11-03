@@ -1,14 +1,54 @@
 import Image from "next/image";
 import Link from "next/link";
 import { signOut } from "@/app/actions/auth";
+import AdminApplicationReviewControls from "@/components/admin-application-review-controls";
+import ResidentApplicationForms from "@/components/resident-application-forms";
+import type {
+  ApplicationDocumentLink,
+  EducationalAssistanceApplication,
+  JobseekerApplication,
+} from "@/lib/supabase/database.types";
+
+type EducationApplicationWithDocuments = EducationalAssistanceApplication & {
+  documents: ApplicationDocumentLink[];
+  documentErrors: string[];
+};
+type JobseekerApplicationWithDocuments = JobseekerApplication & {
+  documents: ApplicationDocumentLink[];
+  documentErrors: string[];
+};
 
 type PortalDashboardProps = {
   email: string;
+  educationApplications?: EducationApplicationWithDocuments[];
+  educationApplicationsError?: string;
+  jobseekerApplications?: JobseekerApplicationWithDocuments[];
+  jobseekerApplicationsError?: string;
+  residentEducationApplications?: EducationalAssistanceApplication[];
+  residentEducationApplicationsError?: string;
+  residentJobseekerApplications?: JobseekerApplication[];
+  residentJobseekerApplicationsError?: string;
   role: "admin" | "resident";
 };
 
+const officialPositions = [
+  "Punong Barangay",
+  "Barangay Kagawad",
+  "Barangay Secretary",
+  "Barangay Treasurer",
+  "SK Chairperson",
+];
+
 export default function PortalDashboard({
   email,
+  educationApplications = [],
+  educationApplicationsError,
+  jobseekerApplications = [],
+  jobseekerApplicationsError,
+  residentEducationApplications = [],
+  residentEducationApplicationsError,
+  residentJobseekerApplications = [],
+  residentJobseekerApplicationsError,
   role,
 }: PortalDashboardProps) {
   const isAdmin = role === "admin";
@@ -40,6 +80,12 @@ export default function PortalDashboard({
               <a className="dashboard-nav-link" href="#services">
                 <span aria-hidden="true">◇</span> Services
               </a>
+              <a className="dashboard-nav-link" href="#educational-assistance">
+                <span aria-hidden="true">▤</span> Education applicants
+              </a>
+              <a className="dashboard-nav-link" href="#jobseeker-applicants">
+                <span aria-hidden="true">♙</span> Jobseeker applicants
+              </a>
               <a className="dashboard-nav-link" href="#announcements">
                 <span aria-hidden="true">◉</span> Announcements
               </a>
@@ -53,7 +99,13 @@ export default function PortalDashboard({
                 <span aria-hidden="true">◇</span> Browse services
               </a>
               <a className="dashboard-nav-link" href="#requests">
-                <span aria-hidden="true">▤</span> My requests
+                <span aria-hidden="true">▤</span> Applications
+              </a>
+              <a className="dashboard-nav-link" href="#announcements">
+                <span aria-hidden="true">◉</span> Announcements
+              </a>
+              <a className="dashboard-nav-link" href="#officials">
+                <span aria-hidden="true">♙</span> Barangay officials
               </a>
               <a className="dashboard-nav-link" href="#account">
                 <span aria-hidden="true">◎</span> Account
@@ -123,9 +175,20 @@ export default function PortalDashboard({
           </div>
 
           {isAdmin ? (
-            <AdminOverview />
+            <AdminOverview
+              applications={educationApplications}
+              applicationsError={educationApplicationsError}
+              jobseekerApplications={jobseekerApplications}
+              jobseekerApplicationsError={jobseekerApplicationsError}
+            />
           ) : (
-            <ResidentOverview email={email} />
+            <ResidentOverview
+              email={email}
+              educationApplications={residentEducationApplications}
+              educationApplicationsError={residentEducationApplicationsError}
+              jobseekerApplications={residentJobseekerApplications}
+              jobseekerApplicationsError={residentJobseekerApplicationsError}
+            />
           )}
 
           <section className="dashboard-account-panel" id="account">
@@ -159,7 +222,24 @@ export default function PortalDashboard({
   );
 }
 
-function AdminOverview() {
+function AdminOverview({
+  applications,
+  applicationsError,
+  jobseekerApplications,
+  jobseekerApplicationsError,
+}: {
+  applications: EducationApplicationWithDocuments[];
+  applicationsError?: string;
+  jobseekerApplications: JobseekerApplicationWithDocuments[];
+  jobseekerApplicationsError?: string;
+}) {
+  const highSchoolApplications = applications.filter(
+    (application) => application.education_level === "high_school",
+  );
+  const collegeApplications = applications.filter(
+    (application) => application.education_level === "college",
+  );
+
   return (
     <>
       <section className="admin-welcome-card">
@@ -227,14 +307,303 @@ function AdminOverview() {
       </div>
       <p className="dashboard-data-note">
         <span aria-hidden="true">i</span>
-        Request records and editable announcements are not connected to a
-        database yet.
+        Application records are private to authorized portal administrators.
       </p>
+
+      <section
+        className="admin-applications-section"
+        id="educational-assistance"
+      >
+        <div className="dashboard-section-title">
+          <div>
+            <span className="section-kicker">EDUCATIONAL ASSISTANCE</span>
+            <h2>Applicant lists</h2>
+          </div>
+          <span className="dashboard-section-note">
+            {applications.length}{" "}
+            {applications.length === 1 ? "application" : "applications"}
+          </span>
+        </div>
+
+        {applicationsError ? (
+          <p className="admin-applications-error" role="alert">
+            Could not load applications: {applicationsError}. Check that the
+            educational assistance database setup has been run in Supabase.
+          </p>
+        ) : (
+          <div className="admin-applications-grid">
+            <ApplicationList
+              applications={highSchoolApplications}
+              educationLevel="High school"
+            />
+            <ApplicationList
+              applications={collegeApplications}
+              educationLevel="College"
+            />
+          </div>
+        )}
+      </section>
+
+      <section
+        className="admin-applications-section"
+        id="jobseeker-applicants"
+      >
+        <div className="dashboard-section-title">
+          <div>
+            <span className="section-kicker">EMPLOYMENT ASSISTANCE</span>
+            <h2>Jobseeker applicants</h2>
+          </div>
+          <span className="dashboard-section-note">
+            {jobseekerApplications.length}{" "}
+            {jobseekerApplications.length === 1 ? "applicant" : "applicants"}
+          </span>
+        </div>
+
+        {jobseekerApplicationsError ? (
+          <p className="admin-applications-error" role="alert">
+            Could not load jobseeker applicants: {jobseekerApplicationsError}.
+            Check that the jobseeker applications table and admin read policy
+            have been set up in Supabase.
+          </p>
+        ) : jobseekerApplications.length === 0 ? (
+          <div className="admin-application-group">
+            <p className="admin-applications-empty">
+              No jobseeker applications yet.
+            </p>
+          </div>
+        ) : (
+          <ul className="admin-jobseeker-list">
+            {jobseekerApplications.map((application) => (
+              <li className="admin-application-item" key={application.id}>
+                <div className="admin-application-primary">
+                  <strong>{application.applicant_name}</strong>
+                  <span>{application.applicant_email}</span>
+                </div>
+                <dl className="admin-application-details">
+                  <div>
+                    <dt>Preferred position</dt>
+                    <dd>{application.desired_position}</dd>
+                  </div>
+                  <div>
+                    <dt>Contact</dt>
+                    <dd>{application.contact_number || "Not provided"}</dd>
+                  </div>
+                  <div>
+                    <dt>Skills / experience</dt>
+                    <dd>{application.skills_experience || "Not provided"}</dd>
+                  </div>
+                  <div>
+                    <dt>Applied</dt>
+                    <dd>
+                      {new Intl.DateTimeFormat("en-PH", {
+                        dateStyle: "medium",
+                        timeZone: "Asia/Manila",
+                      }).format(new Date(application.submitted_at))}
+                    </dd>
+                  </div>
+                </dl>
+                {(application.documents.length > 0 ||
+                  application.documentErrors.length > 0) && (
+                  <div className="admin-application-documents">
+                    <strong>Attached documents</strong>
+                    <div>
+                      {application.documents.map((document) => (
+                        <a
+                          href={document.url}
+                          key={document.label}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          {document.label} ↗
+                        </a>
+                      ))}
+                    </div>
+                    {application.documentErrors.map((documentError) => (
+                      <p
+                        className="admin-application-document-error"
+                        key={documentError}
+                        role="alert"
+                      >
+                        Could not open document link: {documentError}. If the
+                        file exists in Storage, confirm this admin is listed in{" "}
+                        <code>public.portal_admins</code> and can read objects
+                        in the application-documents bucket.
+                      </p>
+                    ))}
+                  </div>
+                )}
+                <span className="admin-application-status">
+                  {application.status}
+                </span>
+                <AdminApplicationReviewControls
+                  applicationId={application.id}
+                  applicationType="jobseeker"
+                  status={application.status}
+                  reviewNotes={application.review_notes}
+                  missingRequirements={[
+                    !application.applicant_name.trim() && "Applicant name",
+                    !application.desired_position.trim() && "Preferred position",
+                    !application.valid_id_front_path && "Valid ID front",
+                    !application.valid_id_back_path && "Valid ID back",
+                  ].filter((requirement): requirement is string =>
+                    Boolean(requirement),
+                  )}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
     </>
   );
 }
 
-function ResidentOverview({ email }: { email: string }) {
+function ApplicationList({
+  applications,
+  educationLevel,
+}: {
+  applications: EducationApplicationWithDocuments[];
+  educationLevel: string;
+}) {
+  return (
+    <section className="admin-application-group">
+      <div className="admin-application-group-heading">
+        <h3>{educationLevel}</h3>
+        <span>{applications.length}</span>
+      </div>
+      {applications.length === 0 ? (
+        <p className="admin-applications-empty">
+          No {educationLevel.toLowerCase()} applications yet.
+        </p>
+      ) : (
+        <ul className="admin-application-list">
+          {applications.map((application) => (
+            <li className="admin-application-item" key={application.id}>
+              <div className="admin-application-primary">
+                <strong>{application.applicant_name}</strong>
+                <span>{application.applicant_email}</span>
+              </div>
+              <dl className="admin-application-details">
+                <div>
+                  <dt>School</dt>
+                  <dd>{application.school_name}</dd>
+                </div>
+                <div>
+                  <dt>Year / grade</dt>
+                  <dd>{application.year_or_grade_level}</dd>
+                </div>
+                <div>
+                  <dt>Contact</dt>
+                  <dd>{application.contact_number || "Not provided"}</dd>
+                </div>
+                <div>
+                  <dt>Applied</dt>
+                  <dd>
+                    {new Intl.DateTimeFormat("en-PH", {
+                      dateStyle: "medium",
+                      timeZone: "Asia/Manila",
+                    }).format(new Date(application.submitted_at))}
+                  </dd>
+                </div>
+              </dl>
+              {(application.documents.length > 0 ||
+                application.documentErrors.length > 0) && (
+                <div className="admin-application-documents">
+                  <strong>Attached documents</strong>
+                  <div>
+                    {application.documents.map((document) => (
+                      <a
+                        href={document.url}
+                        key={document.label}
+                        rel="noreferrer"
+                        target="_blank"
+                      >
+                        {document.label} ↗
+                      </a>
+                    ))}
+                  </div>
+                  {application.documentErrors.map((documentError) => (
+                    <p
+                      className="admin-application-document-error"
+                      key={documentError}
+                      role="alert"
+                    >
+                      Could not open document link: {documentError}. If the
+                      file exists in Storage, confirm this admin is listed in{" "}
+                      <code>public.portal_admins</code> and can read objects
+                      in the application-documents bucket.
+                    </p>
+                  ))}
+                </div>
+              )}
+              <span className="admin-application-status">
+                {application.status}
+              </span>
+              <AdminApplicationReviewControls
+                applicationId={application.id}
+                applicationType="education"
+                status={application.status}
+                reviewNotes={application.review_notes}
+                missingRequirements={[
+                  !application.applicant_name.trim() && "Applicant name",
+                  !application.school_name.trim() && "School name",
+                  !application.year_or_grade_level.trim() && "Year / grade",
+                  !application.school_assessment_path && "School assessment",
+                  !application.school_id_front_path && "School ID front",
+                  !application.school_id_back_path && "School ID back",
+                ].filter((requirement): requirement is string =>
+                  Boolean(requirement),
+                )}
+              />
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}
+
+function ResidentOverview({
+  email,
+  educationApplications,
+  educationApplicationsError,
+  jobseekerApplications,
+  jobseekerApplicationsError,
+}: {
+  email: string;
+  educationApplications: EducationalAssistanceApplication[];
+  educationApplicationsError?: string;
+  jobseekerApplications: JobseekerApplication[];
+  jobseekerApplicationsError?: string;
+}) {
+  const applicationUpdates = [
+    ...educationApplications.map((application) => ({
+      id: application.id,
+      category:
+        application.education_level === "high_school"
+          ? "High school educational assistance"
+          : "College educational assistance",
+      status: application.status,
+      reviewNotes: application.review_notes,
+      submittedAt: application.submitted_at,
+    })),
+    ...jobseekerApplications.map((application) => ({
+      id: application.id,
+      category: "Jobseeker assistance",
+      status: application.status,
+      reviewNotes: application.review_notes,
+      submittedAt: application.submitted_at,
+    })),
+  ].sort(
+    (first, second) =>
+      new Date(second.submittedAt).getTime() -
+      new Date(first.submittedAt).getTime(),
+  );
+  const applicationLoadErrors = [
+    educationApplicationsError && `Educational assistance: ${educationApplicationsError}`,
+    jobseekerApplicationsError && `Jobseeker assistance: ${jobseekerApplicationsError}`,
+  ].filter((error): error is string => Boolean(error));
+
   return (
     <>
       <section className="resident-welcome-card">
@@ -242,10 +611,10 @@ function ResidentOverview({ email }: { email: string }) {
           <span className="resident-welcome-badge">
             <span aria-hidden="true">✦</span> YOUR BARANGAY, CONNECTED
           </span>
-          <h2>Serbisyong malapit sa iyo.</h2>
+          <h2>Your services and community updates, all in one place.</h2>
           <p>
-            You&apos;re signed in as <strong>{email}</strong>. Browse local
-            services or get in touch with your barangay.
+            Welcome back, <strong>{email}</strong>. Check your applications,
+            read barangay announcements, and find your local officials.
           </p>
           <Link className="resident-browse-button" href="/#services">
             Browse local services <span aria-hidden="true">→</span>
@@ -311,16 +680,117 @@ function ResidentOverview({ email }: { email: string }) {
       <section className="resident-requests-card" id="requests">
         <div className="dashboard-panel-heading">
           <div>
-            <span className="section-kicker">SERVICE ACTIVITY</span>
-            <h2>My requests</h2>
+            <span className="section-kicker">APPLICATION TRACKER</span>
+            <h2>Application updates</h2>
           </div>
-          <span className="requests-empty-badge">No requests yet</span>
+          <span className="requests-empty-badge">
+            {applicationUpdates.length}{" "}
+            {applicationUpdates.length === 1 ? "application" : "applications"}
+          </span>
         </div>
-        <p>
-          Online request tracking is not connected yet. Contact the barangay
-          office for assistance with a service request.
-        </p>
-        <Link href="/#contact">Contact your barangay →</Link>
+        {applicationLoadErrors.length > 0 ? (
+          <p className="resident-application-load-error" role="alert">
+            Application tracking could not load:{" "}
+            {applicationLoadErrors.join(" ")}. Ask the administrator to run the
+            latest application setup SQL in Supabase.
+          </p>
+        ) : applicationUpdates.length === 0 ? (
+          <div className="resident-empty-state">
+            <span className="resident-empty-icon" aria-hidden="true">
+              ▤
+            </span>
+            <div>
+              <strong>Your application updates will appear here</strong>
+              <p>
+                You have not submitted any applications yet. Use the forms
+                below to apply.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <ul className="resident-application-updates">
+            {applicationUpdates.map((application) => (
+              <li key={application.id}>
+                <span>
+                  <strong>{application.category}</strong>
+                  <small>
+                    Submitted{" "}
+                    {new Intl.DateTimeFormat("en-PH", {
+                      dateStyle: "medium",
+                      timeZone: "Asia/Manila",
+                    }).format(new Date(application.submittedAt))}
+                  </small>
+                  {application.reviewNotes && (
+                    <small>Admin note: {application.reviewNotes}</small>
+                  )}
+                </span>
+                <span className="resident-application-status">
+                  {application.status}
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {applicationLoadErrors.length > 0 ? null : (
+          <div className="resident-application-form-link">
+            <Link href="#apply-heading">Apply for assistance ↓</Link>
+          </div>
+        )}
+      </section>
+
+      <ResidentApplicationForms />
+
+      <section className="resident-community-section" id="announcements">
+        <div className="dashboard-section-title">
+          <div>
+            <span className="section-kicker">FROM YOUR BARANGAY</span>
+            <h2>Updates &amp; announcements</h2>
+          </div>
+          <span className="dashboard-section-note">Community bulletin</span>
+        </div>
+        <div className="resident-empty-state resident-bulletin-empty">
+          <span className="resident-empty-icon" aria-hidden="true">◉</span>
+          <div>
+            <strong>No announcements have been published here yet</strong>
+            <p>
+              New notices and community updates will appear in this space.
+              Please check the barangay&apos;s public bulletin or contact the
+              barangay hall for current announcements.
+            </p>
+            <Link href="/#announcements">Visit the public bulletin →</Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="resident-officials-section" id="officials">
+        <div className="dashboard-section-title">
+          <div>
+            <span className="section-kicker">YOUR LOCAL LEADERS</span>
+            <h2>Barangay officials</h2>
+          </div>
+          <span className="dashboard-section-note">Centro Norte</span>
+        </div>
+        <div className="resident-officials-card">
+          <p className="resident-officials-note">
+            The official names and contact details have not been published in
+            this portal yet. Please contact the barangay hall to confirm the
+            current roster.
+          </p>
+          <ul className="resident-officials-list">
+            {officialPositions.map((position) => (
+              <li key={position}>
+                <span className="officials-role-icon" aria-hidden="true">♙</span>
+                <span>
+                  <strong>{position}</strong>
+                  <small>Official details not yet published</small>
+                </span>
+              </li>
+            ))}
+          </ul>
+          <Link className="resident-officials-contact" href="/#contact">
+            Contact the barangay hall →
+          </Link>
+        </div>
       </section>
     </>
   );
