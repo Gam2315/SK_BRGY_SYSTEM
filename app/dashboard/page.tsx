@@ -37,6 +37,7 @@ async function ResidentDashboard() {
 
   const [
     { data: educationApplications, error: educationApplicationsError },
+    { data: educationSettings, error: educationSettingsError },
     { data: jobseekerApplications, error: jobseekerApplicationsError },
     { data: announcementSubscription, error: announcementSubscriptionError },
     { data: announcements, error: announcementsError },
@@ -48,6 +49,11 @@ async function ResidentDashboard() {
       )
       .eq("user_id", data.user.id)
       .order("submitted_at", { ascending: false }),
+    supabase
+      .from("educational_assistance_settings")
+      .select("is_open")
+      .eq("id", true)
+      .single(),
     supabase
       .from("jobseeker_applications")
       .select(
@@ -75,6 +81,8 @@ async function ResidentDashboard() {
       role="resident"
       residentEducationApplications={educationApplications ?? []}
       residentEducationApplicationsError={educationApplicationsError?.message}
+      educationApplicationsOpen={educationSettings?.is_open ?? false}
+      educationApplicationsSettingsError={educationSettingsError?.message}
       residentJobseekerApplications={jobseekerApplications ?? []}
       residentJobseekerApplicationsError={jobseekerApplicationsError?.message}
       announcementSubscribed={announcementSubscription?.subscribed ?? false}

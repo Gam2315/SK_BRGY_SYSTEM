@@ -34,7 +34,13 @@ function DocumentUpload({
   );
 }
 
-export default function ResidentApplicationForms() {
+export default function ResidentApplicationForms({
+  educationApplicationsOpen,
+  educationApplicationsSettingsError,
+}: {
+  educationApplicationsOpen: boolean;
+  educationApplicationsSettingsError?: string;
+}) {
   const [educationLevel, setEducationLevel] = useState("");
   const [yearOrGradeLevel, setYearOrGradeLevel] = useState("");
   const [educationState, educationAction, educationPending] = useActionState(
@@ -59,120 +65,136 @@ export default function ResidentApplicationForms() {
           <summary>
             <span>
               <strong>Educational assistance</strong>
-              <small>Apply as a high school or college student</small>
+              <small>
+                {educationApplicationsSettingsError
+                  ? "Application availability is temporarily unavailable"
+                  : educationApplicationsOpen
+                    ? "Apply as a high school or college student"
+                    : "Applications are currently closed"}
+              </small>
             </span>
             <span className="application-form-toggle" aria-hidden="true">
               +
             </span>
           </summary>
-          <form
-            action={educationAction}
-            className="resident-application-form"
-            encType="multipart/form-data"
-          >
-            <label>
-              Full name
-              <input
-                autoComplete="name"
-                maxLength={150}
-                name="applicant_name"
-                required
-              />
-            </label>
-            <label>
-              Contact number <span>(optional)</span>
-              <input
-                autoComplete="tel"
-                maxLength={40}
-                name="contact_number"
-                type="tel"
-              />
-            </label>
-            <label>
-              Education level
-              <select
-                name="education_level"
-                required
-                value={educationLevel}
-                onChange={(event) => {
-                  setEducationLevel(event.target.value);
-                  setYearOrGradeLevel("");
-                }}
-              >
-                <option disabled value="">
-                  Select your level
-                </option>
-                <option value="high_school">High school</option>
-                <option value="college">College</option>
-              </select>
-            </label>
-            <label>
-              School name
-              <input maxLength={200} name="school_name" required />
-            </label>
-            <label>
-              Year or grade level
-              <select
-                disabled={!educationLevel}
-                name="year_or_grade_level"
-                required
-                value={yearOrGradeLevel}
-                onChange={(event) => setYearOrGradeLevel(event.target.value)}
-              >
-                <option disabled value="">
-                  {educationLevel
-                    ? "Select your year or grade"
-                    : "Select your education level first"}
-                </option>
-                {educationLevel === "high_school" &&
-                  Array.from({ length: 6 }, (_, index) => index + 7).map(
-                    (grade) => (
-                      <option key={grade} value={`Grade ${grade}`}>
-                        Grade {grade}
-                      </option>
-                    ),
-                  )}
-                {educationLevel === "college" &&
-                  ["First", "Second", "Third", "Fourth", "Fifth"].map(
-                    (year) => (
-                      <option key={year} value={`${year} year`}>
-                        {year} year
-                      </option>
-                    ),
-                  )}
-              </select>
-            </label>
-            <div className="application-document-group">
-              <span className="application-document-heading">
-                Required documents
-              </span>
-              <DocumentUpload
-                name="school_assessment"
-                title="School assessment"
-              />
-              <DocumentUpload
-                name="school_id_front"
-                title="School ID · front"
-              />
-              <DocumentUpload
-                name="school_id_back"
-                title="School ID · back"
-              />
-            </div>
-            {educationState.error && (
-              <p className="application-form-message error" role="alert">
-                {educationState.error}
-              </p>
-            )}
-            {educationState.success && (
-              <p className="application-form-message success" role="status">
-                {educationState.success}
-              </p>
-            )}
-            <button disabled={educationPending} type="submit">
-              {educationPending ? "Submitting..." : "Submit application"}
-            </button>
-          </form>
+          {educationApplicationsSettingsError ? (
+            <p className="education-application-closed" role="alert">
+              Application availability could not be verified. Please try again
+              later or contact the barangay office.
+            </p>
+          ) : !educationApplicationsOpen ? (
+            <p className="education-application-closed" role="status">
+              Educational assistance applications are currently closed.
+            </p>
+          ) : (
+            <form
+              action={educationAction}
+              className="resident-application-form"
+            >
+              <label>
+                Full name
+                <input
+                  autoComplete="name"
+                  maxLength={150}
+                  name="applicant_name"
+                  required
+                />
+              </label>
+              <label>
+                Contact number <span>(optional)</span>
+                <input
+                  autoComplete="tel"
+                  maxLength={40}
+                  name="contact_number"
+                  type="tel"
+                />
+              </label>
+              <label>
+                Education level
+                <select
+                  name="education_level"
+                  required
+                  value={educationLevel}
+                  onChange={(event) => {
+                    setEducationLevel(event.target.value);
+                    setYearOrGradeLevel("");
+                  }}
+                >
+                  <option disabled value="">
+                    Select your level
+                  </option>
+                  <option value="high_school">High school</option>
+                  <option value="college">College</option>
+                </select>
+              </label>
+              <label>
+                School name
+                <input maxLength={200} name="school_name" required />
+              </label>
+              <label>
+                Year or grade level
+                <select
+                  disabled={!educationLevel}
+                  name="year_or_grade_level"
+                  required
+                  value={yearOrGradeLevel}
+                  onChange={(event) => setYearOrGradeLevel(event.target.value)}
+                >
+                  <option disabled value="">
+                    {educationLevel
+                      ? "Select your year or grade"
+                      : "Select your education level first"}
+                  </option>
+                  {educationLevel === "high_school" &&
+                    Array.from({ length: 6 }, (_, index) => index + 7).map(
+                      (grade) => (
+                        <option key={grade} value={`Grade ${grade}`}>
+                          Grade {grade}
+                        </option>
+                      ),
+                    )}
+                  {educationLevel === "college" &&
+                    ["First", "Second", "Third", "Fourth", "Fifth"].map(
+                      (year) => (
+                        <option key={year} value={`${year} year`}>
+                          {year} year
+                        </option>
+                      ),
+                    )}
+                </select>
+              </label>
+              <div className="application-document-group">
+                <span className="application-document-heading">
+                  Required documents
+                </span>
+                <DocumentUpload
+                  name="school_assessment"
+                  title="School assessment"
+                />
+                <DocumentUpload
+                  name="school_id_front"
+                  title="School ID · front"
+                />
+                <DocumentUpload
+                  name="school_id_back"
+                  title="School ID · back"
+                />
+              </div>
+              {educationState.error && (
+                <p className="application-form-message error" role="alert">
+                  {educationState.error}
+                </p>
+              )}
+              {educationState.success && (
+                <p className="application-form-message success" role="status">
+                  {educationState.success}
+                </p>
+              )}
+              <button disabled={educationPending} type="submit">
+                {educationPending ? "Submitting..." : "Submit application"}
+              </button>
+            </form>
+          )}
         </details>
 
         <details className="resident-application-form-card">
@@ -188,7 +210,6 @@ export default function ResidentApplicationForms() {
           <form
             action={jobseekerAction}
             className="resident-application-form"
-            encType="multipart/form-data"
           >
             <label>
               Full name

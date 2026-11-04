@@ -1,6 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { recordActivity } from "@/lib/supabase/activity-logs";
 import { getSupabaseConfig, isAdminEmail } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -72,6 +73,12 @@ export async function authenticate(
     }
 
     if (data.session) {
+      if (data.user?.id && data.user.email) {
+        await recordActivity(supabase, data.user, {
+          action: "Account created",
+          summary: "Created a resident portal account.",
+        });
+      }
       redirect("/dashboard");
     }
 
@@ -98,6 +105,14 @@ export async function authenticate(
       error: "We could not verify your account. Please try signing in again.",
     };
   }
+
+  await recordActivity(supabase, {
+    id: data.user.id,
+    email: data.user.email ?? email,
+  }, {
+    action: "Sign in",
+    summary: "Signed in to the portal.",
+  });
 
   redirect(isAdminEmail(data.user.email) ? "/admin" : "/dashboard");
 }
@@ -135,6 +150,20 @@ export async function signOut() {
   }
 
   const supabase = await createClient({ writeCookies: true });
+  const { data: userData, error: userError } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error("Could not verify session before sign-out:", userError.message);
+    redirect("/login?error=signout");
+  }
+
+  if (userData.user?.id && userData.user.email) {
+    await recordActivity(supabase, userData.user, {
+      action: "Sign out",
+      summary: "Signed out of the portal.",
+    });
+  }
+
   const { error } = await supabase.auth.signOut();
 
   if (error) {

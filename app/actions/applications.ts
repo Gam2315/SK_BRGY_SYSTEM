@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recordActivity } from "@/lib/supabase/activity-logs";
 import { createClient } from "@/lib/supabase/server";
 import type { EducationLevel } from "@/lib/supabase/database.types";
 
@@ -178,6 +179,29 @@ export async function submitEducationalAssistanceApplication(
     return { error: applicant.error };
   }
 
+  const { data: settings, error: settingsError } = await applicant.supabase
+    .from("educational_assistance_settings")
+    .select("is_open")
+    .eq("id", true)
+    .single();
+
+  if (settingsError) {
+    console.error(
+      "Could not verify educational assistance application availability:",
+      settingsError.message,
+    );
+    return {
+      error:
+        "Application availability could not be verified. Please try again later or contact the barangay office.",
+    };
+  }
+
+  if (!settings?.is_open) {
+    return {
+      error: "Educational assistance applications are currently closed.",
+    };
+  }
+
   const uploads = await uploadApplicationDocuments(
     applicant.supabase,
     applicant.user.id,
@@ -229,9 +253,16 @@ export async function submitEducationalAssistanceApplication(
     return {
       error: cleanupFailed
         ? "Your application could not be saved and uploaded documents could not be removed. Contact the barangay office."
-        : `Application save failed (${error.code}): ${error.message}`,
+        : error.code === "P0001"
+          ? "Educational assistance applications are currently closed."
+          : `Application save failed (${error.code}): ${error.message}`,
     };
   }
+
+  await recordActivity(applicant.supabase, applicant.user, {
+    action: "Application submitted",
+    summary: "Submitted an educational assistance application.",
+  });
 
   revalidatePath("/dashboard");
   revalidatePath("/admin");
@@ -325,6 +356,11 @@ export async function submitJobseekerApplication(
         : `Application save failed (${error.code}): ${error.message}`,
     };
   }
+
+  await recordActivity(applicant.supabase, applicant.user, {
+    action: "Application submitted",
+    summary: "Submitted a jobseeker application.",
+  });
 
   revalidatePath("/dashboard");
   revalidatePath("/admin");

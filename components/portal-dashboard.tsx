@@ -6,10 +6,12 @@ import { useEffect, useState } from "react";
 import { signOut } from "@/app/actions/auth";
 import AdminAnnouncementManager from "@/components/admin-announcement-manager";
 import AdminApplicationReviewControls from "@/components/admin-application-review-controls";
+import AdminEducationApplicationSettings from "@/components/admin-education-application-settings";
 import ResidentApplicationForms from "@/components/resident-application-forms";
 import ResidentAnnouncementSubscription from "@/components/resident-announcement-subscription";
 import type {
   Announcement,
+  ActivityLog,
   ApplicationDocumentLink,
   EducationalAssistanceApplication,
   JobseekerApplication,
@@ -28,6 +30,8 @@ type PortalDashboardProps = {
   email: string;
   educationApplications?: EducationApplicationWithDocuments[];
   educationApplicationsError?: string;
+  educationApplicationsOpen?: boolean;
+  educationApplicationsSettingsError?: string;
   jobseekerApplications?: JobseekerApplicationWithDocuments[];
   jobseekerApplicationsError?: string;
   residentEducationApplications?: EducationalAssistanceApplication[];
@@ -36,6 +40,10 @@ type PortalDashboardProps = {
   residentJobseekerApplicationsError?: string;
   announcements?: Announcement[];
   announcementsError?: string;
+  activityLogs?: (ActivityLog & {
+    actor_role: "Administrator" | "Resident";
+  })[];
+  activityLogsError?: string;
   announcementSubscribed?: boolean;
   announcementSubscriptionError?: string;
   role: "admin" | "resident";
@@ -46,6 +54,7 @@ const adminNavigationSections = [
   "announcements",
   "educational-assistance",
   "jobseeker-applicants",
+  "activity-logs",
   "account",
 ];
 const residentNavigationSections = [
@@ -59,6 +68,8 @@ export default function PortalDashboard({
   email,
   educationApplications = [],
   educationApplicationsError,
+  educationApplicationsOpen = false,
+  educationApplicationsSettingsError,
   jobseekerApplications = [],
   jobseekerApplicationsError,
   residentEducationApplications = [],
@@ -67,6 +78,8 @@ export default function PortalDashboard({
   residentJobseekerApplicationsError,
   announcements = [],
   announcementsError,
+  activityLogs = [],
+  activityLogsError,
   announcementSubscribed = false,
   announcementSubscriptionError,
   role,
@@ -167,6 +180,13 @@ export default function PortalDashboard({
                 onClick={() => setActiveSection("jobseeker-applicants")}
               >
                 <span aria-hidden="true">♙</span> Jobseeker applicants
+              </a>
+              <a
+                className={`dashboard-nav-link${activeSection === "activity-logs" ? " active" : ""}`}
+                href="#activity-logs"
+                onClick={() => setActiveSection("activity-logs")}
+              >
+                <span aria-hidden="true">◷</span> Activity logs
               </a>
               <a
                 className={`dashboard-nav-link${activeSection === "account" ? " active" : ""}`}
@@ -274,16 +294,26 @@ export default function PortalDashboard({
             <AdminOverview
               applications={educationApplications}
               applicationsError={educationApplicationsError}
+              educationApplicationsOpen={educationApplicationsOpen}
+              educationApplicationsSettingsError={
+                educationApplicationsSettingsError
+              }
               jobseekerApplications={jobseekerApplications}
               jobseekerApplicationsError={jobseekerApplicationsError}
               announcements={announcements}
               announcementsError={announcementsError}
+              activityLogs={activityLogs}
+              activityLogsError={activityLogsError}
             />
           ) : (
             <ResidentOverview
               email={email}
               educationApplications={residentEducationApplications}
               educationApplicationsError={residentEducationApplicationsError}
+              educationApplicationsOpen={educationApplicationsOpen === true}
+              educationApplicationsSettingsError={
+                educationApplicationsSettingsError
+              }
               jobseekerApplications={residentJobseekerApplications}
               jobseekerApplicationsError={residentJobseekerApplicationsError}
               announcementSubscribed={announcementSubscribed}
@@ -327,17 +357,27 @@ export default function PortalDashboard({
 function AdminOverview({
   applications,
   applicationsError,
+  educationApplicationsOpen,
+  educationApplicationsSettingsError,
   jobseekerApplications,
   jobseekerApplicationsError,
   announcements,
   announcementsError,
+  activityLogs,
+  activityLogsError,
 }: {
   applications: EducationApplicationWithDocuments[];
   applicationsError?: string;
+  educationApplicationsOpen: boolean;
+  educationApplicationsSettingsError?: string;
   jobseekerApplications: JobseekerApplicationWithDocuments[];
   jobseekerApplicationsError?: string;
   announcements: Announcement[];
   announcementsError?: string;
+  activityLogs: (ActivityLog & {
+    actor_role: "Administrator" | "Resident";
+  })[];
+  activityLogsError?: string;
 }) {
   const highSchoolApplications = applications.filter(
     (application) => application.education_level === "high_school",
@@ -430,6 +470,10 @@ function AdminOverview({
         className="admin-applications-section"
         id="educational-assistance"
       >
+        <AdminEducationApplicationSettings
+          isOpen={educationApplicationsOpen}
+          error={educationApplicationsSettingsError}
+        />
         <div className="dashboard-section-title">
           <div>
             <span className="section-kicker">EDUCATIONAL ASSISTANCE</span>
@@ -570,6 +614,70 @@ function AdminOverview({
           </ul>
         )}
       </section>
+
+      <section
+        className="admin-activity-logs"
+        id="activity-logs"
+        aria-labelledby="activity-logs-title"
+      >
+        <div className="dashboard-section-title">
+          <div>
+            <span className="section-kicker">AUDIT TRAIL</span>
+            <h2 id="activity-logs-title">Recent activity</h2>
+          </div>
+          <span className="dashboard-section-note">
+            Latest {activityLogs.length} events
+          </span>
+        </div>
+        {activityLogsError ? (
+          <div className="admin-activity-error" role="alert">
+            <strong>Activity logs could not be loaded</strong>
+            <p>{activityLogsError}</p>
+            <span>
+              Run the activity log setup script in Supabase and confirm this
+              administrator is listed in <code>public.portal_admins</code>.
+            </span>
+          </div>
+        ) : activityLogs.length === 0 ? (
+          <p className="admin-activity-empty">
+            No activity has been recorded yet.
+          </p>
+        ) : (
+          <div className="admin-activity-table-scroll">
+            <table className="admin-activity-table">
+              <thead>
+                <tr>
+                  <th scope="col">User</th>
+                  <th scope="col">Activity</th>
+                  <th scope="col">Details</th>
+                  <th scope="col">Date and time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activityLogs.map((activity) => (
+                  <tr key={activity.id}>
+                    <td>
+                      <strong>{activity.actor_role}</strong>
+                      <span>{activity.actor_email}</span>
+                    </td>
+                    <td>{activity.action}</td>
+                    <td>{activity.summary}</td>
+                    <td>
+                      <time dateTime={activity.created_at}>
+                        {new Intl.DateTimeFormat("en-PH", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                          timeZone: "Asia/Manila",
+                        }).format(new Date(activity.created_at))}
+                      </time>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </>
   );
 }
@@ -683,6 +791,8 @@ function ResidentOverview({
   email,
   educationApplications,
   educationApplicationsError,
+  educationApplicationsOpen,
+  educationApplicationsSettingsError,
   jobseekerApplications,
   jobseekerApplicationsError,
   announcementSubscribed,
@@ -693,6 +803,8 @@ function ResidentOverview({
   email: string;
   educationApplications: EducationalAssistanceApplication[];
   educationApplicationsError?: string;
+  educationApplicationsOpen: boolean;
+  educationApplicationsSettingsError?: string;
   jobseekerApplications: JobseekerApplication[];
   jobseekerApplicationsError?: string;
   announcementSubscribed: boolean;
@@ -912,7 +1024,12 @@ function ResidentOverview({
         )}
       </section>
 
-      <ResidentApplicationForms />
+      <ResidentApplicationForms
+        educationApplicationsOpen={educationApplicationsOpen}
+        educationApplicationsSettingsError={
+          educationApplicationsSettingsError
+        }
+      />
 
     </>
   );

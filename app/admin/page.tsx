@@ -39,7 +39,9 @@ async function AdminDashboard() {
   const [
     { data: applications, error: applicationsError },
     { data: jobseekerApplications, error: jobseekerApplicationsError },
+    { data: educationSettings, error: educationSettingsError },
     { data: announcements, error: announcementsError },
+    { data: activityLogs, error: activityLogsError },
   ] = await Promise.all([
     supabase
       .from("educational_assistance_applications")
@@ -54,11 +56,21 @@ async function AdminDashboard() {
       )
       .order("submitted_at", { ascending: false }),
     supabase
+      .from("educational_assistance_settings")
+      .select("is_open")
+      .eq("id", true)
+      .single(),
+    supabase
       .from("announcements")
       .select(
         "id, title, body, published_at, created_by, email_status, email_sent_at, email_error, created_at, updated_at",
       )
       .order("published_at", { ascending: false }),
+    supabase
+      .from("activity_logs")
+      .select("id, actor_user_id, actor_email, action, summary, created_at")
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
   const educationApplicationsWithDocuments = await Promise.all(
@@ -103,10 +115,19 @@ async function AdminDashboard() {
       role="admin"
       educationApplications={educationApplicationsWithDocuments}
       educationApplicationsError={applicationsError?.message}
+      educationApplicationsOpen={educationSettings?.is_open}
+      educationApplicationsSettingsError={educationSettingsError?.message}
       jobseekerApplications={jobseekerApplicationsWithDocuments}
       jobseekerApplicationsError={jobseekerApplicationsError?.message}
       announcements={announcements ?? []}
       announcementsError={announcementsError?.message}
+      activityLogs={(activityLogs ?? []).map((activity) => ({
+        ...activity,
+        actor_role: isAdminEmail(activity.actor_email)
+          ? "Administrator"
+          : "Resident",
+      }))}
+      activityLogsError={activityLogsError?.message}
     />
   );
 }

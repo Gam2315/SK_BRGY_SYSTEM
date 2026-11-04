@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recordActivity } from "@/lib/supabase/activity-logs";
 import { isAdminEmail } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -180,6 +181,11 @@ export async function publishAnnouncement(
     };
   }
 
+  await recordActivity(administrator.supabase, administrator.user, {
+    action: "Announcement published",
+    summary: "Published a community announcement.",
+  });
+
   const delivery = await sendAnnouncementEmails(administrator.supabase, announcement);
   revalidatePath("/");
   revalidatePath("/admin");
@@ -227,6 +233,11 @@ export async function updateAnnouncement(
     return { error: "Could not save announcement changes." };
   }
 
+  await recordActivity(administrator.supabase, administrator.user, {
+    action: "Announcement updated",
+    summary: "Edited a community announcement.",
+  });
+
   revalidatePath("/");
   revalidatePath("/admin");
   return { success: "Announcement updated. Editing does not send another email." };
@@ -254,6 +265,11 @@ export async function deleteAnnouncement(
     console.error("Could not delete announcement:", error.message);
     return { error: "Could not delete the announcement." };
   }
+
+  await recordActivity(administrator.supabase, administrator.user, {
+    action: "Announcement deleted",
+    summary: "Deleted a community announcement.",
+  });
 
   revalidatePath("/");
   revalidatePath("/admin");
@@ -290,6 +306,11 @@ export async function retryAnnouncementEmails(
   if (delivery.emailStatus === "failed") {
     return { error: `Email retry failed: ${delivery.emailError}` };
   }
+
+  await recordActivity(administrator.supabase, administrator.user, {
+    action: "Announcement email retried",
+    summary: `Retried announcement email delivery to ${delivery.sentCount} subscribers.`,
+  });
 
   return {
     success: `Email notification sent to ${delivery.sentCount} subscribed resident${delivery.sentCount === 1 ? "" : "s"}.`,
@@ -329,6 +350,13 @@ export async function updateAnnouncementSubscription(
     console.error("Could not save announcement preference:", saveError.message);
     return { error: "Could not save your email preference. Please try again." };
   }
+
+  await recordActivity(administrator, data.user, {
+    action: "Announcement preference updated",
+    summary: subscribed
+      ? "Subscribed to announcement emails."
+      : "Unsubscribed from announcement emails.",
+  });
 
   revalidatePath("/dashboard");
   return {

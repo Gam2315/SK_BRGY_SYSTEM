@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { recordActivity } from "@/lib/supabase/activity-logs";
 import { isAdminEmail } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -83,6 +84,11 @@ export async function updateApplicationReview(
       error: "Application not found or this account is not authorized to review it.",
     };
   }
+
+  await recordActivity(supabase, data.user, {
+    action: "Application reviewed",
+    summary: `${applicationType === "education" ? "Educational assistance" : "Jobseeker"} application marked ${status.toLowerCase()}.`,
+  });
 
   revalidatePath("/admin");
   revalidatePath("/dashboard");

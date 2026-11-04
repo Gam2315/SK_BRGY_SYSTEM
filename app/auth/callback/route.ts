@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { recordActivity } from "@/lib/supabase/activity-logs";
 import { getSupabaseConfig, isAdminEmail } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
@@ -42,6 +43,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(
       new URL("/login?error=callback", request.url),
     );
+  }
+
+  if (userData.user?.id && userData.user.email) {
+    await recordActivity(supabase, userData.user, {
+      action: "Sign in",
+      summary: "Signed in to the portal.",
+    });
   }
 
   const destination =

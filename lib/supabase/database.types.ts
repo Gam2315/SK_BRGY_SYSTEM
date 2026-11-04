@@ -16,7 +16,26 @@ export type EducationalAssistanceApplication = {
   review_notes: string | null;
   reviewed_at: string | null;
   reviewed_by: string | null;
+  claim_period_id?: string | null;
+  claimed_at?: string | null;
+  claimed_by?: string | null;
   submitted_at: string;
+};
+
+export type EducationClaimPeriod = {
+  id: string;
+  name: string;
+  claim_date: string;
+  instructions: string | null;
+  created_by: string;
+  created_at: string;
+};
+
+export type EducationAssistanceSettings = {
+  id: boolean;
+  is_open: boolean;
+  updated_at: string;
+  updated_by: string | null;
 };
 
 export type JobseekerApplication = {
@@ -54,15 +73,28 @@ export type Announcement = {
   updated_at: string;
 };
 
+export type ActivityLog = {
+  id: string;
+  actor_user_id: string | null;
+  actor_email: string;
+  action: string;
+  summary: string;
+  created_at: string;
+};
+
 type EducationalAssistanceApplicationInsert = Omit<
   EducationalAssistanceApplication,
   "id" | "submitted_at" | "review_notes" | "reviewed_at" | "reviewed_by"
+    | "claim_period_id" | "claimed_at" | "claimed_by"
 > & {
   id?: string;
   submitted_at?: string;
   review_notes?: string | null;
   reviewed_at?: string | null;
   reviewed_by?: string | null;
+  claim_period_id?: string | null;
+  claimed_at?: string | null;
+  claimed_by?: string | null;
 };
 
 type JobseekerApplicationInsert = Omit<
@@ -83,6 +115,26 @@ export type Database = {
         Row: EducationalAssistanceApplication;
         Insert: EducationalAssistanceApplicationInsert;
         Update: Partial<EducationalAssistanceApplicationInsert>;
+        Relationships: [];
+      };
+      education_claim_periods: {
+        Row: EducationClaimPeriod;
+        Insert: Omit<EducationClaimPeriod, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      educational_assistance_settings: {
+        Row: EducationAssistanceSettings;
+        Insert: {
+          id?: boolean;
+          is_open?: boolean;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: Partial<EducationAssistanceSettings>;
         Relationships: [];
       };
       jobseeker_applications: {
@@ -116,6 +168,15 @@ export type Database = {
         Update: Partial<Omit<Announcement, "id" | "created_at">>;
         Relationships: [];
       };
+      activity_logs: {
+        Row: ActivityLog;
+        Insert: Omit<ActivityLog, "id" | "created_at"> & {
+          id?: string;
+          created_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
       announcement_subscribers: {
         Row: {
           user_id: string;
@@ -140,9 +201,25 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      assign_education_claim: {
+        Args: {
+          p_application_id: string;
+          p_claim_period_id: string;
+        };
+        Returns: undefined;
+      };
       is_portal_admin: {
         Args: Record<string, never>;
         Returns: boolean;
+      };
+      record_education_assistance_claim: {
+        Args: {
+          p_application_id: string;
+        };
+        Returns: {
+          claimed_at: string;
+          claimed_by: string;
+        }[];
       };
     };
     Enums: Record<string, never>;

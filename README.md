@@ -120,11 +120,20 @@ account, and residents can see their own submission status. Application rows
 are readable by the applicant and signed-in users listed in `portal_admins`;
 only applicants can create their own rows. Administrators listed in
 `portal_admins` can approve or reject either type and optionally leave a note
-visible to the applicant. The automatic completeness check confirms only that
-required information and document uploads are present; administrators must
-review document contents and make the final eligibility decision. Educational
-assistance requires a school assessment and front/back school ID; jobseeker
-applications require front/back of a valid ID. Documents accept JPG, PNG,
-WebP, or PDF files up to 5 MB each, are stored in the private
-`application-documents` bucket, and are available to the applicant and
-authorized administrators through temporary signed links.
+visible to the applicant. Administrators can open or close educational
+assistance applications from the admin dashboard; closed applications are
+blocked in both the resident form and the database. The automatic completeness
+check confirms only that required information and document uploads are
+present; administrators must review document contents and make the final
+eligibility decision. Educational assistance requires a school assessment and
+front/back school ID; jobseeker applications require front/back of a valid ID.
+Documents accept JPG, PNG, WebP, or PDF files up to 5 MB each, are stored in
+the private `application-documents` bucket, and are available to applicants
+and authorized administrators through temporary signed links.
+
+To enable the admin activity log, run `supabase/activity-logs.sql` in the
+Supabase SQL Editor after creating the `portal_admins` table with either setup
+script. The admin dashboard then shows the latest 100 sign-ins, sign-outs,
+application submissions and reviews, announcement changes, and subscription
+preference updates. Activity records are readable only by accounts listed in
+`public.portal_admins`.

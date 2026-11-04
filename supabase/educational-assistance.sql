@@ -37,6 +37,72 @@ create table if not exists public.educational_assistance_applications (
   submitted_at timestamptz not null default now()
 );
 
+create table if not exists public.educational_assistance_settings (
+  id boolean primary key default true check (id),
+  is_open boolean not null default true,
+  updated_at timestamptz not null default now(),
+  updated_by uuid references auth.users (id) on delete set null
+);
+
+insert into public.educational_assistance_settings (id, is_open)
+values (true, true)
+on conflict (id) do nothing;
+
+alter table public.educational_assistance_settings enable row level security;
+revoke all on table public.educational_assistance_settings from anon, authenticated;
+grant select on table public.educational_assistance_settings to authenticated;
+grant update (is_open, updated_at, updated_by)
+  on table public.educational_assistance_settings to authenticated;
+
+drop policy if exists "Authenticated users can read education application settings"
+  on public.educational_assistance_settings;
+create policy "Authenticated users can read education application settings"
+  on public.educational_assistance_settings
+  for select
+  to authenticated
+  using (true);
+
+drop policy if exists "Portal admins can update education application settings"
+  on public.educational_assistance_settings;
+create policy "Portal admins can update education application settings"
+  on public.educational_assistance_settings
+  for update
+  to authenticated
+  using ((select public.is_portal_admin()))
+  with check ((select public.is_portal_admin()));
+
+create or replace function public.require_educational_assistance_open()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not exists (
+    select 1
+    from public.educational_assistance_settings
+    where id = true
+      and is_open
+  ) then
+    raise exception using
+      errcode = 'P0001',
+      message = 'Educational assistance applications are currently closed.';
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.require_educational_assistance_open()
+  from public, anon, authenticated;
+
+drop trigger if exists require_educational_assistance_open
+  on public.educational_assistance_applications;
+create trigger require_educational_assistance_open
+  before insert on public.educational_assistance_applications
+  for each row
+  execute function public.require_educational_assistance_open();
+
 alter table public.educational_assistance_applications
   add column if not exists user_id uuid references auth.users (id) on delete set null;
 

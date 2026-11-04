@@ -2456,6 +2456,246 @@ textarea:focus-visible {
   margin-top: 23px;
 }
 
+.education-application-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 15px;
+  padding: 15px 18px;
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 9px;
+}
+
+.education-application-settings-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 12px;
+}
+
+.education-application-settings-status > span {
+  color: #78847e;
+  font-size: 10px;
+  font-weight: 550;
+}
+
+.education-application-settings-status > strong {
+  color: #35453c;
+  font-size: 12px;
+}
+
+.education-application-settings-status > strong.open,
+.education-application-settings-status > strong.closed,
+.education-application-settings-status > strong.unavailable {
+  padding: 4px 9px;
+  border-radius: 12px;
+  font-size: 9px;
+  font-weight: 680;
+}
+
+.education-application-settings .open {
+  color: #286744;
+  background: #e8f4eb;
+}
+
+.education-application-settings .closed {
+  color: #8d4240;
+  background: #fff0ed;
+}
+
+.education-application-settings .unavailable {
+  color: #6b7280;
+  background: #eef0f2;
+}
+
+.education-application-settings form {
+  justify-self: end;
+}
+
+.education-application-settings form button {
+  min-height: 34px;
+  padding: 0 12px;
+  color: #fff;
+  background: var(--blue);
+  border: 0;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.education-application-settings form button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.education-application-settings-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 9px;
+  line-height: 1.6;
+}
+
+.education-application-settings-message.error {
+  display: grid;
+  gap: 3px;
+  padding: 10px 12px;
+  color: #8d4240;
+  background: #fff6f4;
+  border: 1px solid #f0d8d3;
+  border-radius: 6px;
+}
+
+.education-application-settings-message.error > strong {
+  display: block;
+  font-size: 10px;
+}
+
+.education-application-settings-message.error > span {
+  display: block;
+  color: #765d5a;
+}
+
+.education-application-settings-message.error code {
+  overflow-wrap: anywhere;
+}
+
+.education-application-settings-message.success {
+  color: #286744;
+}
+
+.education-application-settings-message.action-error {
+  grid-column: 1 / -1;
+}
+
+.admin-activity-logs {
+  margin-top: 23px;
+}
+
+.admin-activity-logs .dashboard-section-title {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+.admin-activity-logs .dashboard-section-title h2 {
+  font-size: 18px;
+}
+
+.admin-activity-error {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  padding: 13px 15px;
+  color: #8d4240;
+  background: #fff6f4;
+  border: 1px solid #f0d8d3;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+
+.admin-activity-error strong {
+  font-size: 11px;
+}
+
+.admin-activity-error p {
+  margin: 0;
+}
+
+.admin-activity-error span {
+  color: #765d5a;
+}
+
+.admin-activity-error code {
+  white-space: normal;
+}
+
+.admin-activity-table-scroll {
+  overflow-x: auto;
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 9px;
+}
+
+.admin-activity-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.admin-activity-table th,
+.admin-activity-table td {
+  padding: 11px 13px;
+  border-bottom: 1px solid #edf0f2;
+  color: #53615b;
+  font-size: 10px;
+  line-height: 1.5;
+  vertical-align: top;
+}
+
+.admin-activity-table th {
+  color: #77847c;
+  background: #f7f9fa;
+  font-size: 8px;
+  font-weight: 720;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-activity-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.admin-activity-table td:first-child {
+  min-width: 180px;
+}
+
+.admin-activity-table td:first-child strong,
+.admin-activity-table td:first-child span {
+  display: block;
+}
+
+.admin-activity-table td:first-child strong {
+  color: #35453c;
+  font-size: 10px;
+}
+
+.admin-activity-table td:first-child span {
+  margin-top: 2px;
+  color: #7b8881;
+  overflow-wrap: anywhere;
+}
+
+.admin-activity-table td:nth-child(2) {
+  min-width: 155px;
+  color: #354b40;
+  font-weight: 650;
+}
+
+.admin-activity-table td:nth-child(3) {
+  min-width: 230px;
+}
+
+.admin-activity-table td:last-child {
+  min-width: 155px;
+  white-space: nowrap;
+}
+
+.admin-activity-empty {
+  margin: 0;
+  padding: 22px;
+  color: #77847c;
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 9px;
+  font-size: 10px;
+  text-align: center;
+}
+
 .admin-applications-section .dashboard-section-title {
   margin-top: 0;
   margin-bottom: 15px;
@@ -2993,6 +3233,15 @@ textarea:focus-visible {
   gap: 14px;
   padding: 16px 18px 18px;
   border-top: 1px solid #edeff1;
+}
+
+.education-application-closed {
+  margin: 0;
+  padding: 15px 18px;
+  color: #7d8982;
+  border-top: 1px solid #edeff1;
+  font-size: 10px;
+  line-height: 1.6;
 }
 
 .resident-application-form > label > span {
