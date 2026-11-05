@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState, ViewTransition } from "react";
+import { useEffect, useMemo, useRef, useState, ViewTransition } from "react";
 
 type IconName =
   | "arrow"
@@ -32,7 +32,23 @@ type PublicAnnouncement = {
   published_at: string;
 };
 
-type LandingSection = "home" | "services" | "announcements" | "officials" | "about";
+type PublicCommunityPost = {
+  id: string;
+  kind: "activity" | "project";
+  title: string;
+  body: string;
+  activity_date: string;
+  published_at: string;
+  image_urls: string[];
+};
+
+type LandingSection =
+  | "home"
+  | "services"
+  | "announcements"
+  | "community-posts"
+  | "officials"
+  | "about";
 
 const services: Service[] = [
   {
@@ -188,12 +204,36 @@ export default function PublicLandingPage({
   const [activeSection, setActiveSection] = useState<LandingSection>("home");
   const [announcements, setAnnouncements] = useState<PublicAnnouncement[]>([]);
   const [announcementLoadError, setAnnouncementLoadError] = useState("");
+  const [communityPosts, setCommunityPosts] = useState<PublicCommunityPost[]>([]);
+  const [communityPostsLoadError, setCommunityPostsLoadError] = useState("");
+  const [selectedImage, setSelectedImage] = useState<{
+    images: { alt: string; src: string }[];
+    index: number;
+  } | null>(null);
+  const imageViewerRef = useRef<HTMLDialogElement>(null);
+  const imageTouchStartX = useRef<number | null>(null);
+  const activeImage = selectedImage?.images[selectedImage.index];
+
+  function moveSelectedImage(direction: -1 | 1) {
+    setSelectedImage((current) => {
+      if (!current) return current;
+      const index = current.index + direction;
+      if (index < 0 || index >= current.images.length) return current;
+      return { ...current, index };
+    });
+  }
+
+  useEffect(() => {
+    const dialog = imageViewerRef.current;
+    if (selectedImage && dialog && !dialog.open) dialog.showModal();
+  }, [selectedImage]);
 
   useEffect(() => {
     const sectionIds: LandingSection[] = [
       "home",
       "services",
       "announcements",
+      "community-posts",
       "officials",
       "about",
     ];
@@ -228,6 +268,37 @@ export default function PublicLandingPage({
       window.removeEventListener("resize", updateActiveSection);
       window.removeEventListener("hashchange", updateActiveSection);
     };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadCommunityPosts() {
+      try {
+        const response = await fetch("/api/community-posts", {
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          setCommunityPostsLoadError(
+            "Published activities and projects are temporarily unavailable.",
+          );
+          return;
+        }
+        const result = (await response.json()) as {
+          posts?: PublicCommunityPost[];
+        };
+        setCommunityPosts(result.posts ?? []);
+      } catch (error) {
+        if (error instanceof Error && error.name !== "AbortError") {
+          setCommunityPostsLoadError(
+            "Published activities and projects are temporarily unavailable.",
+          );
+        }
+      }
+    }
+
+    void loadCommunityPosts();
+    return () => controller.abort();
   }, []);
 
   const visibleServices = useMemo(() => {
@@ -337,6 +408,13 @@ export default function PublicLandingPage({
                 onClick={() => setActiveSection("announcements")}
               >
                 Announcements
+              </a>
+              <a
+                className={`nav-link${activeSection === "community-posts" ? " active" : ""}`}
+                href="#community-posts"
+                onClick={() => setActiveSection("community-posts")}
+              >
+                Activities
               </a>
               <a
                 className={`nav-link${activeSection === "officials" ? " active" : ""}`}
@@ -590,6 +668,84 @@ export default function PublicLandingPage({
           </div>
         </section>
 
+        <section className="community-highlights-section section-pad" id="community-posts">
+          <div className="container">
+            <div className="section-heading">
+              <div>
+                <span className="section-kicker">OUR COMMUNITY IN ACTION</span>
+                <h2>Activities &amp; completed projects</h2>
+                <p>See the programs and improvements happening in Centro Norte.</p>
+              </div>
+            </div>
+
+            {communityPostsLoadError ? (
+              <p className="public-announcement-error" role="status">
+                {communityPostsLoadError}
+              </p>
+            ) : communityPosts.length > 0 ? (
+              <div className="community-post-grid">
+                {communityPosts.map((post) => (
+                  <article className="community-post-card" key={post.id}>
+                    {post.image_urls.length > 0 && (
+                      <div
+                        className={`community-post-images community-post-images-${post.image_urls.length}`}
+                      >
+                        {post.image_urls.map((imageUrl, index) => (
+                          <button
+                            className="community-post-image"
+                            key={imageUrl}
+                            type="button"
+                            aria-label={`View ${post.title} picture ${index + 1}`}
+                            onClick={() =>
+                              setSelectedImage({
+                                images: post.image_urls.map((src, imageIndex) => ({
+                                  src,
+                                  alt: `${post.title} picture ${imageIndex + 1}`,
+                                })),
+                                index,
+                              })
+                            }
+                          >
+                            <Image
+                              alt={`${post.title} picture ${index + 1}`}
+                              fill
+                              sizes="(max-width: 700px) 100vw, 33vw"
+                              src={imageUrl}
+                              unoptimized
+                            />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    <div className="community-post-topline">
+                      <span className={`community-post-badge ${post.kind}`}>
+                        <Icon
+                          name={post.kind === "activity" ? "users" : "shield"}
+                          size={14}
+                        />
+                        {post.kind === "activity" ? "ACTIVITY" : "COMPLETED PROJECT"}
+                      </span>
+                      <time dateTime={post.activity_date}>
+                        <Icon name="calendar" size={14} />
+                        {new Intl.DateTimeFormat("en-PH", {
+                          dateStyle: "medium",
+                          timeZone: "Asia/Manila",
+                        }).format(new Date(`${post.activity_date}T00:00:00Z`))}
+                      </time>
+                    </div>
+                    <h3>{post.title}</h3>
+                    <p>{post.body}</p>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="community-post-empty">
+                Activities and completed barangay projects will be shared here.
+              </div>
+            )}
+          </div>
+        </section>
+
         <section className="officials-section section-pad" id="officials">
           <div className="container">
             <div className="section-heading">
@@ -691,6 +847,95 @@ export default function PublicLandingPage({
           </div>
         </div>
       </footer>
+      {selectedImage && activeImage && (
+        <dialog
+          aria-label="Community photo viewer"
+          className="application-document-preview"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              imageViewerRef.current?.close();
+            }
+          }}
+          onClose={() => setSelectedImage(null)}
+          onKeyDown={(event) => {
+            if (event.key === "ArrowRight") {
+              event.preventDefault();
+              moveSelectedImage(1);
+            }
+            if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              moveSelectedImage(-1);
+            }
+          }}
+          ref={imageViewerRef}
+        >
+          <div className="application-document-preview-header community-image-preview-header">
+            <div className="community-image-preview-controls">
+              {selectedImage.images.length > 1 && (
+                <>
+                  <button
+                    aria-label="Previous picture"
+                    className="application-document-preview-close"
+                    disabled={selectedImage.index === 0}
+                    onClick={() => moveSelectedImage(-1)}
+                    type="button"
+                  >
+                    ‹
+                  </button>
+                  <span aria-live="polite">
+                    {selectedImage.index + 1} / {selectedImage.images.length}
+                  </span>
+                  <button
+                    aria-label="Next picture"
+                    className="application-document-preview-close"
+                    disabled={selectedImage.index === selectedImage.images.length - 1}
+                    onClick={() => moveSelectedImage(1)}
+                    type="button"
+                  >
+                    ›
+                  </button>
+                </>
+              )}
+              <button
+                aria-label="Close photo preview"
+                className="application-document-preview-close"
+                onClick={() => imageViewerRef.current?.close()}
+                type="button"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+          <div
+            className="application-document-preview-image"
+            onTouchStart={(event) => {
+              imageTouchStartX.current = event.touches[0]?.clientX ?? null;
+            }}
+            onTouchEnd={(event) => {
+              const startX = imageTouchStartX.current;
+              const endX = event.changedTouches[0]?.clientX;
+              imageTouchStartX.current = null;
+              if (startX === null || endX === undefined || selectedImage.images.length < 2) {
+                return;
+              }
+
+              const distance = endX - startX;
+              if (Math.abs(distance) >= 50) {
+                moveSelectedImage(distance < 0 ? 1 : -1);
+              }
+            }}
+          >
+            <Image
+              alt={activeImage.alt}
+              fill
+              priority
+              sizes="calc(100vw - 24px)"
+              src={activeImage.src}
+              unoptimized
+            />
+          </div>
+        </dialog>
+      )}
     </>
   );
 }

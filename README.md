@@ -79,6 +79,19 @@ Variables; never expose the API key with a `NEXT_PUBLIC_` prefix. If delivery
 fails, the announcement remains published and an administrator can retry
 notification after fixing the email setup.
 
+To let administrators publish community activities and completed projects,
+open the Supabase project's SQL Editor, paste the full contents of
+`supabase/community-posts.sql`, and run it. This repeatable setup creates the
+community posts table, ensures the admin-check helper exists, creates the
+public photo bucket and access policies, and refreshes the API schema cache.
+Rerun the script after updates. Ensure the confirmed administrator account is
+listed in `public.portal_admins` as shown above. Administrators can create,
+edit, and delete these posts from the Activities & Projects section of
+`/admin`; published posts appear in the Activities & completed projects
+section of the public landing page. Each post includes a title, description,
+type, activity or completion date, and up to three optional JPG, PNG, or WebP
+pictures (4 MB each). These posts do not send email notifications.
+
 To enable Google sign-in, configure the Google OAuth client ID and secret in
 Supabase under Authentication → Providers → Google. Add the Supabase callback
 URL shown in the provider settings to the Google Cloud OAuth client's
@@ -95,9 +108,11 @@ provider in Supabase under Authentication → SMTP Settings. Supabase's default
 mailer is restricted to authorized team addresses and has strict rate limits;
 check the Auth logs and the recipient's spam folder if a confirmation message
 does not arrive.
-The admin dashboard can show educational assistance applications in separate
-high school and college lists, along with a jobseeker applicant list. To create
-or update the tables and their row-level security policies, run
+Administrators can review education applicants at `/admin/education-applicants`,
+jobseeker applicants at `/admin/jobseeker-applicants`, and recent activity at
+`/admin/activity-logs`. Educational assistance applications appear in separate
+high school and college lists. To create or update the tables and their
+row-level security policies, run
 `supabase/educational-assistance.sql` in the Supabase SQL Editor. This script
 can be rerun safely to add applicant ownership and resident submission
 permissions, private document storage bucket, storage policies, and admin

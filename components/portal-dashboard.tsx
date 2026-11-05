@@ -2,9 +2,10 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { signOut } from "@/app/actions/auth";
 import AdminAnnouncementManager from "@/components/admin-announcement-manager";
+import AdminCommunityPostsManager from "@/components/admin-community-posts-manager";
 import AdminApplicationReviewControls from "@/components/admin-application-review-controls";
 import AdminEducationApplicationSettings from "@/components/admin-education-application-settings";
 import ResidentApplicationForms from "@/components/resident-application-forms";
@@ -12,6 +13,7 @@ import ResidentAnnouncementSubscription from "@/components/resident-announcement
 import type {
   Announcement,
   ActivityLog,
+  CommunityPostWithImages,
   ApplicationDocumentLink,
   EducationalAssistanceApplication,
   JobseekerApplication,
@@ -26,8 +28,15 @@ type JobseekerApplicationWithDocuments = JobseekerApplication & {
   documentErrors: string[];
 };
 
+export type AdminDashboardSection =
+  | "overview"
+  | "education-applicants"
+  | "jobseeker-applicants"
+  | "activity-logs";
+
 type PortalDashboardProps = {
   email: string;
+  adminPage?: AdminDashboardSection;
   educationApplications?: EducationApplicationWithDocuments[];
   educationApplicationsError?: string;
   educationApplicationsOpen?: boolean;
@@ -40,6 +49,8 @@ type PortalDashboardProps = {
   residentJobseekerApplicationsError?: string;
   announcements?: Announcement[];
   announcementsError?: string;
+  communityPosts?: CommunityPostWithImages[];
+  communityPostsError?: string;
   activityLogs?: (ActivityLog & {
     actor_role: "Administrator" | "Resident";
   })[];
@@ -52,9 +63,7 @@ type PortalDashboardProps = {
 const adminNavigationSections = [
   "services",
   "announcements",
-  "educational-assistance",
-  "jobseeker-applicants",
-  "activity-logs",
+  "community-posts",
   "account",
 ];
 const residentNavigationSections = [
@@ -66,6 +75,7 @@ const residentNavigationSections = [
 
 export default function PortalDashboard({
   email,
+  adminPage = "overview",
   educationApplications = [],
   educationApplicationsError,
   educationApplicationsOpen = false,
@@ -78,6 +88,8 @@ export default function PortalDashboard({
   residentJobseekerApplicationsError,
   announcements = [],
   announcementsError,
+  communityPosts = [],
+  communityPostsError,
   activityLogs = [],
   activityLogsError,
   announcementSubscribed = false,
@@ -87,11 +99,20 @@ export default function PortalDashboard({
   const isAdmin = role === "admin";
   const initials = email.slice(0, 1).toUpperCase();
   const [activeSection, setActiveSection] = useState("overview");
+  const [selectedDocument, setSelectedDocument] =
+    useState<ApplicationDocumentLink | null>(null);
+  const documentPreviewRef = useRef<HTMLDialogElement>(null);
+  const selectedSection =
+    isAdmin && adminPage !== "overview" ? adminPage : activeSection;
   const navigationSections = isAdmin
     ? adminNavigationSections
     : residentNavigationSections;
 
   useEffect(() => {
+    if (isAdmin && adminPage !== "overview") {
+      return;
+    }
+
     let frame = 0;
 
     function updateActiveSection() {
@@ -124,7 +145,23 @@ export default function PortalDashboard({
       window.removeEventListener("resize", updateActiveSection);
       window.removeEventListener("hashchange", updateActiveSection);
     };
-  }, [navigationSections]);
+  }, [adminPage, isAdmin, navigationSections]);
+
+  useEffect(() => {
+    const dialog = documentPreviewRef.current;
+    if (selectedDocument && dialog && !dialog.open) {
+      dialog.showModal();
+    }
+  }, [selectedDocument]);
+
+  const adminPageTitle =
+    adminPage === "education-applicants"
+      ? "Education applicants"
+      : adminPage === "jobseeker-applicants"
+        ? "Jobseeker applicants"
+        : adminPage === "activity-logs"
+          ? "Activity logs"
+          : "Admin dashboard";
 
   return (
     <main className="portal-dashboard">
@@ -144,57 +181,70 @@ export default function PortalDashboard({
 
         <span className="dashboard-nav-label">MENU</span>
         <nav className="dashboard-nav" aria-label="Dashboard navigation">
-          <a
-            className={`dashboard-nav-link${activeSection === "overview" ? " active" : ""}`}
-            href="#overview"
-            onClick={() => setActiveSection("overview")}
-          >
-            <span aria-hidden="true">▦</span> Overview
-          </a>
+          {isAdmin ? (
+            <Link
+              className={`dashboard-nav-link${selectedSection === "overview" ? " active" : ""}`}
+              href="/admin"
+            >
+              <span aria-hidden="true">▦</span> Overview
+            </Link>
+          ) : (
+            <a
+              className={`dashboard-nav-link${selectedSection === "overview" ? " active" : ""}`}
+              href="#overview"
+              onClick={() => setActiveSection("overview")}
+            >
+              <span aria-hidden="true">▦</span> Overview
+            </a>
+          )}
           {isAdmin ? (
             <>
-              <a
-                className={`dashboard-nav-link${activeSection === "services" ? " active" : ""}`}
-                href="#services"
+              <Link
+                className={`dashboard-nav-link${selectedSection === "services" ? " active" : ""}`}
+                href="/admin#services"
                 onClick={() => setActiveSection("services")}
               >
                 <span aria-hidden="true">◇</span> Services
-              </a>
-              <a
-                className={`dashboard-nav-link${activeSection === "announcements" ? " active" : ""}`}
-                href="#announcements"
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "announcements" ? " active" : ""}`}
+                href="/admin#announcements"
                 onClick={() => setActiveSection("announcements")}
               >
                 <span aria-hidden="true">◉</span> Announcements
-              </a>
-              <a
-                className={`dashboard-nav-link${activeSection === "educational-assistance" ? " active" : ""}`}
-                href="#educational-assistance"
-                onClick={() => setActiveSection("educational-assistance")}
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "community-posts" ? " active" : ""}`}
+                href="/admin#community-posts"
+                onClick={() => setActiveSection("community-posts")}
+              >
+                <span aria-hidden="true">◇</span> Activities &amp; projects
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "education-applicants" ? " active" : ""}`}
+                href="/admin/education-applicants"
               >
                 <span aria-hidden="true">▤</span> Education applicants
-              </a>
-              <a
-                className={`dashboard-nav-link${activeSection === "jobseeker-applicants" ? " active" : ""}`}
-                href="#jobseeker-applicants"
-                onClick={() => setActiveSection("jobseeker-applicants")}
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "jobseeker-applicants" ? " active" : ""}`}
+                href="/admin/jobseeker-applicants"
               >
                 <span aria-hidden="true">♙</span> Jobseeker applicants
-              </a>
-              <a
-                className={`dashboard-nav-link${activeSection === "activity-logs" ? " active" : ""}`}
-                href="#activity-logs"
-                onClick={() => setActiveSection("activity-logs")}
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "activity-logs" ? " active" : ""}`}
+                href="/admin/activity-logs"
               >
                 <span aria-hidden="true">◷</span> Activity logs
-              </a>
-              <a
-                className={`dashboard-nav-link${activeSection === "account" ? " active" : ""}`}
-                href="#account"
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "account" ? " active" : ""}`}
+                href={isAdmin ? "/admin#account" : "#account"}
                 onClick={() => setActiveSection("account")}
               >
                 <span aria-hidden="true">◎</span> Account
-              </a>
+              </Link>
             </>
           ) : (
             <>
@@ -250,7 +300,7 @@ export default function PortalDashboard({
           <div className="dashboard-breadcrumb">
             <span>Barangay Portal</span>
             <span aria-hidden="true">/</span>
-            <strong>{isAdmin ? "Admin dashboard" : "My dashboard"}</strong>
+            <strong>{isAdmin ? adminPageTitle : "My dashboard"}</strong>
           </div>
           <div className="dashboard-user">
             <span className="dashboard-avatar" aria-hidden="true">
@@ -274,10 +324,12 @@ export default function PortalDashboard({
               <span className="section-kicker">
                 {isAdmin ? "BARANGAY CENTRO NORTE" : "RESIDENT PORTAL"}
               </span>
-              <h1>{isAdmin ? "Admin dashboard" : "Welcome to your portal"}</h1>
+              <h1>{isAdmin ? adminPageTitle : "Welcome to your portal"}</h1>
               <p>
                 {isAdmin
-                  ? "Your administration workspace for the community portal."
+                  ? adminPage === "overview"
+                    ? "Your administration workspace for the community portal."
+                    : `Review and manage ${adminPageTitle.toLowerCase()}.`
                   : "Find services and stay connected with your barangay."}
               </p>
             </div>
@@ -302,8 +354,12 @@ export default function PortalDashboard({
               jobseekerApplicationsError={jobseekerApplicationsError}
               announcements={announcements}
               announcementsError={announcementsError}
+              communityPosts={communityPosts}
+              communityPostsError={communityPostsError}
               activityLogs={activityLogs}
               activityLogsError={activityLogsError}
+              page={adminPage}
+              onPreviewDocument={setSelectedDocument}
             />
           ) : (
             <ResidentOverview
@@ -350,11 +406,55 @@ export default function PortalDashboard({
           </footer>
         </div>
       </section>
+      {selectedDocument && (
+        <dialog
+          aria-labelledby="document-preview-title"
+          className="application-document-preview"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) {
+              documentPreviewRef.current?.close();
+            }
+          }}
+          onClose={() => setSelectedDocument(null)}
+          ref={documentPreviewRef}
+        >
+          <div className="application-document-preview-header">
+            <h2 id="document-preview-title">{selectedDocument.label}</h2>
+            <button
+              aria-label="Close document preview"
+              className="application-document-preview-close"
+              onClick={() => documentPreviewRef.current?.close()}
+              type="button"
+            >
+              Close
+            </button>
+          </div>
+          {selectedDocument.isImage ? (
+            <div className="application-document-preview-image">
+              <Image
+                alt={selectedDocument.label}
+                fill
+                priority
+                sizes="calc(100vw - 24px)"
+                src={selectedDocument.url}
+                unoptimized
+              />
+            </div>
+          ) : (
+            <iframe
+              className="application-document-preview-frame"
+              src={selectedDocument.url}
+              title={`Preview of ${selectedDocument.label}`}
+            />
+          )}
+        </dialog>
+      )}
     </main>
   );
 }
 
 function AdminOverview({
+  page,
   applications,
   applicationsError,
   educationApplicationsOpen,
@@ -363,9 +463,13 @@ function AdminOverview({
   jobseekerApplicationsError,
   announcements,
   announcementsError,
+  communityPosts,
+  communityPostsError,
   activityLogs,
   activityLogsError,
+  onPreviewDocument,
 }: {
+  page: AdminDashboardSection;
   applications: EducationApplicationWithDocuments[];
   applicationsError?: string;
   educationApplicationsOpen: boolean;
@@ -374,10 +478,13 @@ function AdminOverview({
   jobseekerApplicationsError?: string;
   announcements: Announcement[];
   announcementsError?: string;
+  communityPosts: CommunityPostWithImages[];
+  communityPostsError?: string;
   activityLogs: (ActivityLog & {
     actor_role: "Administrator" | "Resident";
   })[];
   activityLogsError?: string;
+  onPreviewDocument: (document: ApplicationDocumentLink) => void;
 }) {
   const highSchoolApplications = applications.filter(
     (application) => application.education_level === "high_school",
@@ -388,6 +495,8 @@ function AdminOverview({
 
   return (
     <>
+      {page === "overview" && (
+        <>
       <section className="admin-welcome-card">
         <div className="admin-welcome-copy">
           <span className="admin-online">
@@ -455,6 +564,20 @@ function AdminOverview({
             Manage announcements <span aria-hidden="true">→</span>
           </a>
         </article>
+        <article className="admin-tool-card">
+          <span className="admin-tool-icon green" aria-hidden="true">
+            ◇
+          </span>
+          <span className="admin-tool-label">COMMUNITY HIGHLIGHTS</span>
+          <h3>Activities &amp; projects</h3>
+          <p>
+            Publish activities and completed barangay projects on the public
+            landing page.
+          </p>
+          <a href="#community-posts">
+            Manage posts <span aria-hidden="true">→</span>
+          </a>
+        </article>
       </div>
       <p className="dashboard-data-note">
         <span aria-hidden="true">i</span>
@@ -465,7 +588,14 @@ function AdminOverview({
         announcements={announcements}
         error={announcementsError}
       />
+      <AdminCommunityPostsManager
+        posts={communityPosts}
+        error={communityPostsError}
+      />
+        </>
+      )}
 
+      {page === "education-applicants" && (
       <section
         className="admin-applications-section"
         id="educational-assistance"
@@ -495,15 +625,19 @@ function AdminOverview({
             <ApplicationList
               applications={highSchoolApplications}
               educationLevel="High school"
+              onPreviewDocument={onPreviewDocument}
             />
             <ApplicationList
               applications={collegeApplications}
               educationLevel="College"
+              onPreviewDocument={onPreviewDocument}
             />
           </div>
         )}
       </section>
+      )}
 
+      {page === "jobseeker-applicants" && (
       <section
         className="admin-applications-section"
         id="jobseeker-applicants"
@@ -571,10 +705,12 @@ function AdminOverview({
                         <a
                           href={document.url}
                           key={document.label}
-                          rel="noreferrer"
-                          target="_blank"
+                          onClick={(event) => {
+                            event.preventDefault();
+                            onPreviewDocument(document);
+                          }}
                         >
-                          {document.label} ↗
+                          {document.label}
                         </a>
                       ))}
                     </div>
@@ -614,7 +750,9 @@ function AdminOverview({
           </ul>
         )}
       </section>
+      )}
 
+      {page === "activity-logs" && (
       <section
         className="admin-activity-logs"
         id="activity-logs"
@@ -678,6 +816,7 @@ function AdminOverview({
           </div>
         )}
       </section>
+      )}
     </>
   );
 }
@@ -685,9 +824,11 @@ function AdminOverview({
 function ApplicationList({
   applications,
   educationLevel,
+  onPreviewDocument,
 }: {
   applications: EducationApplicationWithDocuments[];
   educationLevel: string;
+  onPreviewDocument: (document: ApplicationDocumentLink) => void;
 }) {
   return (
     <section className="admin-application-group">
@@ -739,10 +880,12 @@ function ApplicationList({
                       <a
                         href={document.url}
                         key={document.label}
-                        rel="noreferrer"
-                        target="_blank"
+                        onClick={(event) => {
+                          event.preventDefault();
+                          onPreviewDocument(document);
+                        }}
                       >
-                        {document.label} ↗
+                        {document.label}
                       </a>
                     ))}
                   </div>

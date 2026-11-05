@@ -2,12 +2,13 @@ import { Suspense } from "react";
 import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import PortalDashboard from "@/components/portal-dashboard";
+import DashboardLoading from "@/components/dashboard-loading";
 import { getSupabaseConfig, isAdminEmail } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export default function ResidentDashboardPage() {
   return (
-    <Suspense fallback={<div className="dashboard-loading">Loading your portal...</div>}>
+    <Suspense fallback={<DashboardLoading />}>
       <ResidentDashboard />
     </Suspense>
   );

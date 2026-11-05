@@ -58,6 +58,7 @@ export type JobseekerApplication = {
 export type ApplicationDocumentLink = {
   label: string;
   url: string;
+  isImage: boolean;
 };
 
 export type Announcement = {
@@ -80,6 +81,23 @@ export type ActivityLog = {
   action: string;
   summary: string;
   created_at: string;
+};
+
+export type CommunityPost = {
+  id: string;
+  kind: "activity" | "project";
+  title: string;
+  body: string;
+  activity_date: string;
+  image_paths: string[];
+  created_by: string;
+  published_at: string;
+  created_at: string;
+  updated_at: string;
+};
+
+export type CommunityPostWithImages = CommunityPost & {
+  image_urls: string[];
 };
 
 type EducationalAssistanceApplicationInsert = Omit<
@@ -166,6 +184,17 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Omit<Announcement, "id" | "created_at">>;
+        Relationships: [];
+      };
+      community_posts: {
+        Row: CommunityPost;
+        Insert: Omit<CommunityPost, "id" | "published_at" | "created_at" | "updated_at"> & {
+          id?: string;
+          published_at?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Omit<CommunityPost, "id" | "created_at">>;
         Relationships: [];
       };
       activity_logs: {

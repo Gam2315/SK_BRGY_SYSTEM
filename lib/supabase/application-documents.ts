@@ -25,7 +25,11 @@ export async function createApplicationDocumentLinks(
       continue;
     }
 
-    links.push({ label: document.label, url: data.signedUrl });
+    links.push({
+      label: document.label,
+      url: data.signedUrl,
+      isImage: /\.(?:jpe?g|png|webp)$/i.test(document.path),
+    });
   }
 
   return { links, errors };
