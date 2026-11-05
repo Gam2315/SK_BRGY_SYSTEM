@@ -51,6 +51,31 @@ export async function updateApplicationReview(
     return { error: "Only the configured portal administrator can review applications." };
   }
 
+  if (applicationType === "education") {
+    const { data: currentApplication, error: currentApplicationError } =
+      await supabase
+        .from("educational_assistance_applications")
+        .select("status")
+        .eq("id", applicationId)
+        .maybeSingle();
+
+    if (currentApplicationError) {
+      console.error(
+        "Could not verify educational assistance application status:",
+        currentApplicationError.message,
+      );
+      return {
+        error: `Could not verify the application (${currentApplicationError.code}).`,
+      };
+    }
+
+    if (currentApplication?.status === "Claimed") {
+      return {
+        error: "A claimed educational assistance application cannot be reviewed again.",
+      };
+    }
+  }
+
   const review = {
     status,
     review_notes: reviewNotes || null,

@@ -115,7 +115,50 @@ alter table public.educational_assistance_applications
   add column if not exists school_id_back_path text,
   add column if not exists review_notes text,
   add column if not exists reviewed_at timestamptz,
-  add column if not exists reviewed_by uuid references auth.users (id) on delete set null;
+  add column if not exists reviewed_by uuid references auth.users (id) on delete set null,
+  add column if not exists claim_token uuid,
+  add column if not exists claimed_at timestamptz,
+  add column if not exists claimed_by uuid references auth.users (id) on delete set null;
+
+update public.educational_assistance_applications
+set claim_token = gen_random_uuid()
+where status = 'Approved'
+  and claim_token is null;
+
+create unique index if not exists educational_assistance_claim_token_key
+  on public.educational_assistance_applications (claim_token)
+  where claim_token is not null;
+
+create or replace function public.generate_education_assistance_claim_token()
+returns trigger
+language plpgsql
+set search_path = ''
+as $$
+begin
+  if new.status = 'Approved' and new.claim_token is null then
+    new.claim_token := gen_random_uuid();
+  end if;
+
+  if tg_op = 'UPDATE' and old.status = 'Claimed' and new.status <> 'Claimed' then
+    raise exception using
+      errcode = 'P0001',
+      message = 'A claimed educational assistance application cannot be reopened.';
+  end if;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.generate_education_assistance_claim_token()
+  from public, anon, authenticated;
+
+drop trigger if exists generate_education_assistance_claim_token
+  on public.educational_assistance_applications;
+create trigger generate_education_assistance_claim_token
+  before insert or update of status
+  on public.educational_assistance_applications
+  for each row
+  execute function public.generate_education_assistance_claim_token();
 
 alter table public.educational_assistance_applications enable row level security;
 revoke all on table public.educational_assistance_applications from anon, authenticated;
@@ -163,6 +206,58 @@ create policy "Portal admins can update educational assistance application revie
     and reviewed_by = (select auth.uid())
     and status in ('Pending', 'Approved', 'Rejected')
   );
+
+drop function if exists public.record_education_assistance_claim(uuid);
+
+create function public.record_education_assistance_claim(
+  p_claim_token uuid
+)
+returns table (
+  id uuid,
+  applicant_name text,
+  applicant_email text,
+  contact_number text,
+  education_level text,
+  school_name text,
+  year_or_grade_level text,
+  claimed_at timestamptz
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not coalesce(public.is_portal_admin(), false) then
+    raise exception using
+      errcode = '42501',
+      message = 'Only portal administrators can record educational assistance claims.';
+  end if;
+
+  return query
+  update public.educational_assistance_applications as application
+  set
+    status = 'Claimed',
+    claimed_at = now(),
+    claimed_by = (select auth.uid())
+  where application.claim_token = p_claim_token
+    and application.status = 'Approved'
+    and application.claimed_at is null
+  returning
+    application.id,
+    application.applicant_name,
+    application.applicant_email,
+    application.contact_number,
+    application.education_level,
+    application.school_name,
+    application.year_or_grade_level,
+    application.claimed_at;
+end;
+$$;
+
+revoke all on function public.record_education_assistance_claim(uuid)
+  from public, anon;
+grant execute on function public.record_education_assistance_claim(uuid)
+  to authenticated;
 
 create table if not exists public.jobseeker_applications (
   id uuid primary key default gen_random_uuid(),

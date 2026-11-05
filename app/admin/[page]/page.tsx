@@ -6,6 +6,7 @@ import type { AdminDashboardSection } from "@/components/portal-dashboard";
 
 const adminPages = [
   "education-applicants",
+  "claim-assistance",
   "jobseeker-applicants",
   "activity-logs",
 ] as const;

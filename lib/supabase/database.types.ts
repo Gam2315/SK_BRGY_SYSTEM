@@ -17,6 +17,7 @@ export type EducationalAssistanceApplication = {
   reviewed_at: string | null;
   reviewed_by: string | null;
   claim_period_id?: string | null;
+  claim_token?: string | null;
   claimed_at?: string | null;
   claimed_by?: string | null;
   submitted_at: string;
@@ -103,7 +104,7 @@ export type CommunityPostWithImages = CommunityPost & {
 type EducationalAssistanceApplicationInsert = Omit<
   EducationalAssistanceApplication,
   "id" | "submitted_at" | "review_notes" | "reviewed_at" | "reviewed_by"
-    | "claim_period_id" | "claimed_at" | "claimed_by"
+    | "claim_period_id" | "claim_token" | "claimed_at" | "claimed_by"
 > & {
   id?: string;
   submitted_at?: string;
@@ -111,6 +112,7 @@ type EducationalAssistanceApplicationInsert = Omit<
   reviewed_at?: string | null;
   reviewed_by?: string | null;
   claim_period_id?: string | null;
+  claim_token?: string | null;
   claimed_at?: string | null;
   claimed_by?: string | null;
 };
@@ -230,24 +232,23 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
-      assign_education_claim: {
-        Args: {
-          p_application_id: string;
-          p_claim_period_id: string;
-        };
-        Returns: undefined;
-      };
       is_portal_admin: {
         Args: Record<string, never>;
         Returns: boolean;
       };
       record_education_assistance_claim: {
         Args: {
-          p_application_id: string;
+          p_claim_token: string;
         };
         Returns: {
+          id: string;
+          applicant_name: string;
+          applicant_email: string;
+          contact_number: string | null;
+          education_level: EducationLevel;
+          school_name: string;
+          year_or_grade_level: string;
           claimed_at: string;
-          claimed_by: string;
         }[];
       };
     };

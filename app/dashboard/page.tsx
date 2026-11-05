@@ -46,7 +46,7 @@ async function ResidentDashboard() {
     supabase
       .from("educational_assistance_applications")
       .select(
-        "id, user_id, applicant_name, applicant_email, contact_number, education_level, school_name, year_or_grade_level, school_assessment_path, school_id_front_path, school_id_back_path, status, review_notes, reviewed_at, reviewed_by, submitted_at",
+        "id, user_id, applicant_name, applicant_email, contact_number, education_level, school_name, year_or_grade_level, school_assessment_path, school_id_front_path, school_id_back_path, status, review_notes, reviewed_at, reviewed_by, claim_token, claimed_at, claimed_by, submitted_at",
       )
       .eq("user_id", data.user.id)
       .order("submitted_at", { ascending: false }),

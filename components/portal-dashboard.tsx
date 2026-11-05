@@ -2,11 +2,13 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "@/app/actions/auth";
 import AdminAnnouncementManager from "@/components/admin-announcement-manager";
 import AdminCommunityPostsManager from "@/components/admin-community-posts-manager";
 import AdminApplicationReviewControls from "@/components/admin-application-review-controls";
+import AdminEducationClaimScanner from "@/components/admin-education-claim-scanner";
 import AdminEducationApplicationSettings from "@/components/admin-education-application-settings";
 import ResidentApplicationForms from "@/components/resident-application-forms";
 import ResidentAnnouncementSubscription from "@/components/resident-announcement-subscription";
@@ -31,6 +33,7 @@ type JobseekerApplicationWithDocuments = JobseekerApplication & {
 export type AdminDashboardSection =
   | "overview"
   | "education-applicants"
+  | "claim-assistance"
   | "jobseeker-applicants"
   | "activity-logs";
 
@@ -157,11 +160,13 @@ export default function PortalDashboard({
   const adminPageTitle =
     adminPage === "education-applicants"
       ? "Education applicants"
-      : adminPage === "jobseeker-applicants"
-        ? "Jobseeker applicants"
-        : adminPage === "activity-logs"
-          ? "Activity logs"
-          : "Admin dashboard";
+      : adminPage === "claim-assistance"
+        ? "Claim assistance"
+        : adminPage === "jobseeker-applicants"
+          ? "Jobseeker applicants"
+          : adminPage === "activity-logs"
+            ? "Activity logs"
+            : "Admin dashboard";
 
   return (
     <main className="portal-dashboard">
@@ -225,6 +230,12 @@ export default function PortalDashboard({
                 href="/admin/education-applicants"
               >
                 <span aria-hidden="true">▤</span> Education applicants
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "claim-assistance" ? " active" : ""}`}
+                href="/admin/claim-assistance"
+              >
+                <span aria-hidden="true">▣</span> Claim assistance
               </Link>
               <Link
                 className={`dashboard-nav-link${selectedSection === "jobseeker-applicants" ? " active" : ""}`}
@@ -343,24 +354,28 @@ export default function PortalDashboard({
           </div>
 
           {isAdmin ? (
-            <AdminOverview
-              applications={educationApplications}
-              applicationsError={educationApplicationsError}
-              educationApplicationsOpen={educationApplicationsOpen}
-              educationApplicationsSettingsError={
-                educationApplicationsSettingsError
-              }
-              jobseekerApplications={jobseekerApplications}
-              jobseekerApplicationsError={jobseekerApplicationsError}
-              announcements={announcements}
-              announcementsError={announcementsError}
-              communityPosts={communityPosts}
-              communityPostsError={communityPostsError}
-              activityLogs={activityLogs}
-              activityLogsError={activityLogsError}
-              page={adminPage}
-              onPreviewDocument={setSelectedDocument}
-            />
+            adminPage === "claim-assistance" ? (
+              <AdminEducationClaimScanner />
+            ) : (
+              <AdminOverview
+                applications={educationApplications}
+                applicationsError={educationApplicationsError}
+                educationApplicationsOpen={educationApplicationsOpen}
+                educationApplicationsSettingsError={
+                  educationApplicationsSettingsError
+                }
+                jobseekerApplications={jobseekerApplications}
+                jobseekerApplicationsError={jobseekerApplicationsError}
+                announcements={announcements}
+                announcementsError={announcementsError}
+                communityPosts={communityPosts}
+                communityPostsError={communityPostsError}
+                activityLogs={activityLogs}
+                activityLogsError={activityLogsError}
+                page={adminPage}
+                onPreviewDocument={setSelectedDocument}
+              />
+            )
           ) : (
             <ResidentOverview
               email={email}
@@ -906,22 +921,33 @@ function ApplicationList({
               <span className="admin-application-status">
                 {application.status}
               </span>
-              <AdminApplicationReviewControls
-                applicationId={application.id}
-                applicationType="education"
-                status={application.status}
-                reviewNotes={application.review_notes}
-                missingRequirements={[
-                  !application.applicant_name.trim() && "Applicant name",
-                  !application.school_name.trim() && "School name",
-                  !application.year_or_grade_level.trim() && "Year / grade",
-                  !application.school_assessment_path && "School assessment",
-                  !application.school_id_front_path && "School ID front",
-                  !application.school_id_back_path && "School ID back",
-                ].filter((requirement): requirement is string =>
-                  Boolean(requirement),
-                )}
-              />
+              {application.status === "Claimed" ? (
+                <p className="admin-application-claimed">
+                  Assistance claimed
+                  {application.claimed_at &&
+                    ` on ${new Intl.DateTimeFormat("en-PH", {
+                      dateStyle: "medium",
+                      timeZone: "Asia/Manila",
+                    }).format(new Date(application.claimed_at))}`}
+                </p>
+              ) : (
+                <AdminApplicationReviewControls
+                  applicationId={application.id}
+                  applicationType="education"
+                  status={application.status}
+                  reviewNotes={application.review_notes}
+                  missingRequirements={[
+                    !application.applicant_name.trim() && "Applicant name",
+                    !application.school_name.trim() && "School name",
+                    !application.year_or_grade_level.trim() && "Year / grade",
+                    !application.school_assessment_path && "School assessment",
+                    !application.school_id_front_path && "School ID front",
+                    !application.school_id_back_path && "School ID back",
+                  ].filter((requirement): requirement is string =>
+                    Boolean(requirement),
+                  )}
+                />
+              )}
             </li>
           ))}
         </ul>
@@ -965,6 +991,8 @@ function ResidentOverview({
       status: application.status,
       reviewNotes: application.review_notes,
       submittedAt: application.submitted_at,
+      claimToken: application.claim_token,
+      claimedAt: application.claimed_at ?? null,
     })),
     ...jobseekerApplications.map((application) => ({
       id: application.id,
@@ -972,6 +1000,8 @@ function ResidentOverview({
       status: application.status,
       reviewNotes: application.review_notes,
       submittedAt: application.submitted_at,
+      claimToken: null,
+      claimedAt: null,
     })),
   ].sort(
     (first, second) =>
@@ -1151,6 +1181,31 @@ function ResidentOverview({
                   </small>
                   {application.reviewNotes && (
                     <small>Admin note: {application.reviewNotes}</small>
+                  )}
+                  {application.status === "Claimed" && application.claimedAt && (
+                    <small>
+                      Claimed{" "}
+                      {new Intl.DateTimeFormat("en-PH", {
+                        dateStyle: "medium",
+                        timeZone: "Asia/Manila",
+                      }).format(new Date(application.claimedAt))}
+                    </small>
+                  )}
+                  {application.status === "Approved" && application.claimToken && (
+                    <span className="resident-claim-qr">
+                      <QRCodeSVG
+                        bgColor="#ffffff"
+                        level="M"
+                        marginSize={4}
+                        size={160}
+                        title={`Educational assistance claim QR for ${application.category}`}
+                        value={application.claimToken}
+                      />
+                      <small>
+                        Bring this QR code and your valid ID to the barangay
+                        office to claim your assistance.
+                      </small>
+                    </span>
                   )}
                 </span>
                 <span className="resident-application-status">

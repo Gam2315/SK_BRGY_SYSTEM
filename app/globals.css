@@ -3353,6 +3353,33 @@ textarea:focus-visible {
   font-weight: 650;
 }
 
+.resident-claim-qr {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+  margin-top: 8px;
+  padding: 12px;
+  background: #f7f9fb;
+  border: 1px solid #e4e9ef;
+  border-radius: 7px;
+}
+
+.resident-claim-qr svg {
+  width: 160px;
+  max-width: 100%;
+  height: auto;
+  padding: 7px;
+  background: #fff;
+  border: 1px solid #e3e7ec;
+  border-radius: 5px;
+}
+
+.resident-claim-qr small {
+  max-width: 300px;
+  color: #64717e;
+  line-height: 1.55;
+}
+
 .resident-application-form-link {
   margin-top: 12px;
 }
@@ -3892,6 +3919,235 @@ textarea:focus-visible {
 
 .admin-applications-section .application-review-message.success {
   color: #384c64;
+}
+
+.admin-application-claimed {
+  margin: 12px 0 0;
+  padding: 9px 10px;
+  color: #2f694c;
+  background: #f0f8f3;
+  border: 1px solid #d5e9dc;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.education-claim-scanner {
+  display: grid;
+  gap: 18px;
+  margin-top: 20px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 9px;
+}
+
+.education-claim-scanner-intro h2 {
+  margin: 6px 0 0;
+  color: #293543;
+  font-size: 19px;
+}
+
+.education-claim-scanner-intro p {
+  max-width: 620px;
+  margin: 7px 0 0;
+  color: #77847c;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.education-claim-scanner-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 15px;
+}
+
+.education-claim-camera,
+.education-claim-verification {
+  min-width: 0;
+  padding: 15px;
+  background: #f8f9fa;
+  border: 1px solid #e5e8ec;
+  border-radius: 7px;
+}
+
+.education-claim-camera h3,
+.education-claim-verification h3 {
+  margin: 0 0 12px;
+  color: #3a4551;
+  font-size: 12px;
+}
+
+.education-claim-qr-reader {
+  width: 100%;
+  max-width: 460px;
+  margin: 0 auto;
+  color: #526170;
+  font-size: 10px;
+}
+
+.education-claim-qr-reader video {
+  border-radius: 5px;
+}
+
+.education-claim-qr-reader button {
+  min-height: 34px;
+  margin: 5px;
+  padding: 0 11px;
+  color: #fff;
+  background: #384d66;
+  border: 0;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 620;
+  cursor: pointer;
+}
+
+.education-claim-qr-reader select {
+  max-width: 100%;
+  min-height: 32px;
+  padding: 5px;
+  color: #384553;
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 4px;
+}
+
+.education-claim-placeholder {
+  margin: 0;
+  padding: 18px 12px;
+  color: #77847c;
+  background: #fff;
+  border: 1px dashed #dfe3e8;
+  border-radius: 5px;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.education-claim-details {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+}
+
+.education-claim-details > div {
+  display: grid;
+  grid-template-columns: minmax(100px, 0.8fr) minmax(0, 1.2fr);
+  gap: 8px;
+  padding-bottom: 7px;
+  border-bottom: 1px solid #e8ebee;
+}
+
+.education-claim-details dt {
+  color: #77847c;
+  font-size: 9px;
+}
+
+.education-claim-details dd {
+  margin: 0;
+  color: #374351;
+  font-size: 10px;
+  font-weight: 620;
+  overflow-wrap: anywhere;
+}
+
+.education-claim-id-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  color: #48535f;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.education-claim-id-check input {
+  flex: 0 0 auto;
+  margin: 1px 0 0;
+  accent-color: #2f694c;
+}
+
+.education-claim-confirm,
+.education-claim-token-form button {
+  min-height: 38px;
+  padding: 0 13px;
+  color: #fff;
+  background: #2f694c;
+  border: 0;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.education-claim-confirm {
+  width: 100%;
+  margin-top: 12px;
+}
+
+.education-claim-confirm:disabled,
+.education-claim-token-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.education-claim-message {
+  margin: 10px 0 0;
+  padding: 9px 10px;
+  border-radius: 5px;
+  font-size: 10px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.education-claim-message.error {
+  color: #8d4240;
+  background: #fff6f4;
+  border: 1px solid #f0d8d3;
+}
+
+.education-claim-message.success {
+  color: #2f694c;
+  background: #f0f8f3;
+  border: 1px solid #d5e9dc;
+}
+
+.education-claim-token-form {
+  display: grid;
+  gap: 7px;
+  padding-top: 15px;
+  border-top: 1px solid #e8ebee;
+}
+
+.education-claim-token-form label {
+  color: #48535f;
+  font-size: 10px;
+  font-weight: 620;
+}
+
+.education-claim-token-form > div {
+  display: flex;
+  gap: 8px;
+}
+
+.education-claim-token-form input {
+  min-width: 0;
+  min-height: 38px;
+  flex: 1 1 auto;
+  padding: 0 10px;
+  color: #343f4b;
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 10px;
+}
+
+.education-claim-token-form button {
+  flex: 0 0 auto;
+  background: #384d66;
 }
 
 .admin-announcement-manager {
@@ -4457,6 +4713,10 @@ textarea:focus-visible {
   }
 
   .admin-applications-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .education-claim-scanner-grid {
     grid-template-columns: 1fr;
   }
 

@@ -146,6 +146,14 @@ Documents accept JPG, PNG, WebP, or PDF files up to 5 MB each, are stored in
 the private `application-documents` bucket, and are available to applicants
 and authorized administrators through temporary signed links.
 
+When an administrator approves educational assistance, the database creates a
+unique claim token. The resident can show its QR code from the dashboard at the
+barangay office with a valid ID. Administrators can scan it at
+`/admin/claim-assistance`, verify the applicant details against the physical ID,
+and confirm the one-time claim. The resident dashboard then shows the claim
+date instead of the QR code. Run the latest
+`supabase/educational-assistance.sql` before using this workflow.
+
 To enable the admin activity log, run `supabase/activity-logs.sql` in the
 Supabase SQL Editor after creating the `portal_admins` table with either setup
 script. The admin dashboard then shows the latest 100 sign-ins, sign-outs,
