@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { connection } from "next/server";
-import { isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 type Placement = "header" | "about";
@@ -13,14 +13,14 @@ export default async function LandingAuthLink({
   await connection();
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
 
   if (error && error.name !== "AuthSessionMissingError") {
     console.error("Could not verify landing page session:", error.message);
   }
 
-  const href = data.user?.email
-    ? isAdminEmail(data.user.email)
+  const href = typeof data?.claims.sub === "string"
+    ? await isPortalAdmin(supabase)
       ? "/admin"
       : "/dashboard"
     : "/login";

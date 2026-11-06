@@ -54,9 +54,7 @@ type PortalDashboardProps = {
   announcementsError?: string;
   communityPosts?: CommunityPostWithImages[];
   communityPostsError?: string;
-  activityLogs?: (ActivityLog & {
-    actor_role: "Administrator" | "Resident";
-  })[];
+  activityLogs?: ActivityLog[];
   activityLogsError?: string;
   announcementSubscribed?: boolean;
   announcementSubscriptionError?: string;
@@ -495,9 +493,7 @@ function AdminOverview({
   announcementsError?: string;
   communityPosts: CommunityPostWithImages[];
   communityPostsError?: string;
-  activityLogs: (ActivityLog & {
-    actor_role: "Administrator" | "Resident";
-  })[];
+  activityLogs: ActivityLog[];
   activityLogsError?: string;
   onPreviewDocument: (document: ApplicationDocumentLink) => void;
 }) {
@@ -810,7 +806,6 @@ function AdminOverview({
                 {activityLogs.map((activity) => (
                   <tr key={activity.id}>
                     <td>
-                      <strong>{activity.actor_role}</strong>
                       <span>{activity.actor_email}</span>
                     </td>
                     <td>{activity.action}</td>

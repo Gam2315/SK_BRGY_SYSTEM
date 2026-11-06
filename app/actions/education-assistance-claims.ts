@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
-import { isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const claimTokenPattern =
@@ -44,8 +44,8 @@ export async function lookupEducationClaim(
     return { error: "Could not verify your session. Sign in again and retry." };
   }
 
-  if (!auth.user?.id || !auth.user.email || !isAdminEmail(auth.user.email)) {
-    return { error: "Only the configured portal administrator can verify claims." };
+  if (!auth.user?.id || !(await isPortalAdmin(supabase))) {
+    return { error: "Only portal administrators can verify claims." };
   }
 
   const { data: application, error } = await supabase
@@ -95,8 +95,8 @@ export async function confirmEducationClaim(
     return { error: "Could not verify your session. Sign in again and retry." };
   }
 
-  if (!auth.user?.id || !auth.user.email || !isAdminEmail(auth.user.email)) {
-    return { error: "Only the configured portal administrator can confirm claims." };
+  if (!auth.user?.id || !(await isPortalAdmin(supabase))) {
+    return { error: "Only portal administrators can confirm claims." };
   }
 
   const { data, error } = await supabase.rpc(

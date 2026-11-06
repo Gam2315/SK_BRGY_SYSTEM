@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { recordActivity } from "@/lib/supabase/activity-logs";
-import { getSupabaseConfig, isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 function getSafeNextPath(value: string | null) {
@@ -52,10 +53,10 @@ export async function GET(request: NextRequest) {
     });
   }
 
-  const destination =
-    userData.user?.email && isAdminEmail(userData.user.email)
-      ? "/admin"
-      : nextPath;
+  const isAdmin = userData.user
+    ? await isPortalAdmin(supabase)
+    : false;
+  const destination = isAdmin ? "/admin" : nextPath;
 
   return NextResponse.redirect(new URL(destination, request.url));
 }

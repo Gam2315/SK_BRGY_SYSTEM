@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
-import { isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 const COMMUNITY_POST_IMAGE_BUCKET = "community-post-images";
@@ -28,9 +28,9 @@ async function getAdministrator() {
     return { error: "Could not verify your session. Sign in again." } as const;
   }
 
-  if (!data.user?.id || !data.user.email || !isAdminEmail(data.user.email)) {
+  if (!data.user?.id || !(await isPortalAdmin(supabase))) {
     return {
-      error: "Only the configured portal administrator can manage activities and projects.",
+      error: "Only portal administrators can manage activities and projects.",
     } as const;
   }
 

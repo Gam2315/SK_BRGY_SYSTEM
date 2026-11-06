@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
-import { isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type EducationApplicationSettingsState = {
@@ -31,9 +31,9 @@ export async function updateEducationApplicationAvailability(
     return { error: "Could not verify your session. Sign in again and retry." };
   }
 
-  if (!data.user?.id || !data.user.email || !isAdminEmail(data.user.email)) {
+  if (!data.user?.id || !(await isPortalAdmin(supabase))) {
     return {
-      error: "Only the configured portal administrator can change application availability.",
+      error: "Only portal administrators can change application availability.",
     };
   }
 

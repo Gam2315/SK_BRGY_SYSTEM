@@ -48,28 +48,34 @@ dashboard at `/admin`.
      from the Supabase project's API settings.
    - `NEXT_PUBLIC_SITE_URL` to the public site URL (use
      `http://localhost:3000` for local development).
-   - `BARANGAY_ADMIN_EMAIL` to the email address reserved for the administrator.
 3. In Supabase Authentication URL Configuration, set the site URL and allow
    `/auth/callback` on each development/production origin.
-4. Create and confirm the administrator account directly in the Supabase
-   dashboard using the designated email. Administrator status is checked
-   server-side against `BARANGAY_ADMIN_EMAIL`; public registration cannot
-   create that account.
-5. Restart the development server after changing environment variables.
+4. Run `supabase/educational-assistance.sql` in the Supabase SQL Editor to
+   create the `portal_admins` table and the `is_portal_admin()` authorization
+   function.
+5. Create and confirm each administrator account in Supabase Authentication.
+   Then add every admin account to `public.portal_admins` by running:
+
+   ```sql
+   insert into public.portal_admins (user_id)
+   select id
+   from auth.users
+   where lower(email) in (
+     lower('FIRST_ADMIN_EMAIL_HERE'),
+     lower('SECOND_ADMIN_EMAIL_HERE')
+   )
+   on conflict (user_id) do nothing;
+   ```
+
+   Add or remove email values in the `in (...)` list as needed. Admin access
+   is controlled by membership in this table, not by an environment variable.
 
 To activate announcements, open the Supabase SQL Editor and run
 `supabase/announcements.sql`. This repeatable setup creates the announcement
 and resident email preference tables, their access policies, and refreshes the
-API schema cache. If the administrator cannot publish after running it, add the
-confirmed admin account to `portal_admins` once, replacing the email below:
-
-```sql
-insert into public.portal_admins (user_id)
-select id
-from auth.users
-where lower(email) = lower('ADMIN_EMAIL_HERE')
-on conflict (user_id) do nothing;
-```
+API schema cache. If an administrator cannot publish after running it, confirm
+that each admin account is present in `portal_admins` using the setup query
+above.
 
 Public announcements display on the landing page. Residents can opt in to
 announcement emails from their dashboard. To enable email delivery, configure a
@@ -84,8 +90,8 @@ open the Supabase project's SQL Editor, paste the full contents of
 `supabase/community-posts.sql`, and run it. This repeatable setup creates the
 community posts table, ensures the admin-check helper exists, creates the
 public photo bucket and access policies, and refreshes the API schema cache.
-Rerun the script after updates. Ensure the confirmed administrator account is
-listed in `public.portal_admins` as shown above. Administrators can create,
+Rerun the script after updates. Ensure each administrator account is listed in
+`public.portal_admins` as shown above. Administrators can create,
 edit, and delete these posts from the Activities & Projects section of
 `/admin`; published posts appear in the Activities & completed projects
 section of the public landing page. Each post includes a title, description,
@@ -98,11 +104,12 @@ URL shown in the provider settings to the Google Cloud OAuth client's
 authorized redirect URIs. In Supabase Authentication URL Configuration, add
 each app origin (for example `http://localhost:3000` and the production URL)
 to the allowed redirect URLs. The app uses `/auth/callback` to complete sign-in
-and sends the configured administrator to `/admin`.
+and sends administrators listed in `public.portal_admins` to `/admin`.
 
 Residents can register with email and password and must follow the confirmation
-email before signing in. Keep email confirmation enabled so public sign-up
-cannot claim the designated administrator email without access to its inbox.
+email before signing in. Keep email confirmation enabled. Public registration
+does not grant administrator access; only accounts explicitly listed in
+`public.portal_admins` are administrators.
 For confirmation email delivery beyond basic testing, configure a custom SMTP
 provider in Supabase under Authentication → SMTP Settings. Supabase's default
 mailer is restricted to authorized team addresses and has strict rate limits;
@@ -117,17 +124,9 @@ row-level security policies, run
 can be rerun safely to add applicant ownership and resident submission
 permissions, private document storage bucket, storage policies, and admin
 review permissions to an existing setup. Run the latest version before using
-the application review controls. Then allow
-the admin account to read the applications and private documents by running
-this query there, replacing the email with the confirmed admin account email:
-
-```sql
-insert into public.portal_admins (user_id)
-select id
-from auth.users
-where lower(email) = lower('ADMIN_EMAIL_HERE')
-on conflict (user_id) do nothing;
-```
+the application review controls. Add each administrator account to
+`public.portal_admins` using the setup query above so they can read applications
+and private documents.
 
 Residents can submit educational assistance and jobseeker applications from
 their dashboard after signing in. Each application is linked to the signed-in

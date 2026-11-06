@@ -5,7 +5,8 @@ import PortalDashboard from "@/components/portal-dashboard";
 import DashboardLoading from "@/components/dashboard-loading";
 import type { AdminDashboardSection } from "@/components/portal-dashboard";
 import { createApplicationDocumentLinks } from "@/lib/supabase/application-documents";
-import { getSupabaseConfig, isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export function AdminDashboardPage({
@@ -28,24 +29,27 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
 
-  if (error) {
+  if (error && error.name !== "AuthSessionMissingError") {
     console.error("Could not verify admin dashboard session:", error.message);
   }
 
-  if (!data.user?.email) {
+  const userId = data?.claims.sub;
+  const email = data?.claims.email;
+
+  if (typeof userId !== "string" || typeof email !== "string") {
     redirect("/login");
   }
 
-  if (!isAdminEmail(data.user.email)) {
+  if (!(await isPortalAdmin(supabase))) {
     redirect("/dashboard");
   }
 
   if (page === "claim-assistance") {
     return (
       <PortalDashboard
-        email={data.user.email}
+        email={email}
         role="admin"
         adminPage={page}
       />
@@ -134,7 +138,7 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
 
   return (
     <PortalDashboard
-      email={data.user.email}
+      email={email}
       role="admin"
       adminPage={page}
       educationApplications={educationApplicationsWithDocuments}
@@ -157,9 +161,6 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
       communityPostsError={communityPostsError?.message}
       activityLogs={(activityLogs ?? []).map((activity) => ({
         ...activity,
-        actor_role: isAdminEmail(activity.actor_email)
-          ? "Administrator"
-          : "Resident",
       }))}
       activityLogsError={activityLogsError?.message}
     />

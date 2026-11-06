@@ -2,7 +2,8 @@
 
 import { redirect } from "next/navigation";
 import { recordActivity } from "@/lib/supabase/activity-logs";
-import { getSupabaseConfig, isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthFormState = {
@@ -41,14 +42,6 @@ export async function authenticate(
   }
 
   if (mode === "signup") {
-    if (isAdminEmail(email)) {
-      return {
-        mode,
-        error:
-          "The administrator account is provisioned separately. Sign in with your admin account instead.",
-      };
-    }
-
     if (password.length < 8) {
       return {
         mode,
@@ -114,7 +107,7 @@ export async function authenticate(
     summary: "Signed in to the portal.",
   });
 
-  redirect(isAdminEmail(data.user.email) ? "/admin" : "/dashboard");
+  redirect(await isPortalAdmin(supabase) ? "/admin" : "/dashboard");
 }
 
 export async function signInWithGoogle() {

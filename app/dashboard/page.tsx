@@ -3,7 +3,8 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import PortalDashboard from "@/components/portal-dashboard";
 import DashboardLoading from "@/components/dashboard-loading";
-import { getSupabaseConfig, isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
+import { getSupabaseConfig } from "@/lib/supabase/config";
 import { createClient } from "@/lib/supabase/server";
 
 export default function ResidentDashboardPage() {
@@ -22,17 +23,20 @@ async function ResidentDashboard() {
   }
 
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.getUser();
+  const { data, error } = await supabase.auth.getClaims();
 
-  if (error) {
+  if (error && error.name !== "AuthSessionMissingError") {
     console.error("Could not verify resident dashboard session:", error.message);
   }
 
-  if (!data.user?.email) {
+  const userId = data?.claims.sub;
+  const email = data?.claims.email;
+
+  if (typeof userId !== "string" || typeof email !== "string") {
     redirect("/login");
   }
 
-  if (isAdminEmail(data.user.email)) {
+  if (await isPortalAdmin(supabase)) {
     redirect("/admin");
   }
 
@@ -48,7 +52,7 @@ async function ResidentDashboard() {
       .select(
         "id, user_id, applicant_name, applicant_email, contact_number, education_level, school_name, year_or_grade_level, school_assessment_path, school_id_front_path, school_id_back_path, status, review_notes, reviewed_at, reviewed_by, claim_token, claimed_at, claimed_by, submitted_at",
       )
-      .eq("user_id", data.user.id)
+      .eq("user_id", userId)
       .order("submitted_at", { ascending: false }),
     supabase
       .from("educational_assistance_settings")
@@ -60,12 +64,12 @@ async function ResidentDashboard() {
       .select(
         "id, user_id, applicant_name, applicant_email, contact_number, desired_position, skills_experience, valid_id_front_path, valid_id_back_path, status, review_notes, reviewed_at, reviewed_by, submitted_at",
       )
-      .eq("user_id", data.user.id)
+      .eq("user_id", userId)
       .order("submitted_at", { ascending: false }),
     supabase
       .from("announcement_subscribers")
       .select("subscribed")
-      .eq("user_id", data.user.id)
+      .eq("user_id", userId)
       .maybeSingle(),
     supabase
       .from("announcements")
@@ -78,7 +82,7 @@ async function ResidentDashboard() {
 
   return (
     <PortalDashboard
-      email={data.user.email}
+      email={email}
       role="resident"
       residentEducationApplications={educationApplications ?? []}
       residentEducationApplicationsError={educationApplicationsError?.message}

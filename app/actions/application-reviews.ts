@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
-import { isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type ApplicationReviewState = {
@@ -47,8 +47,8 @@ export async function updateApplicationReview(
     return { error: "Could not verify your session. Sign in again and retry." };
   }
 
-  if (!data.user?.id || !data.user.email || !isAdminEmail(data.user.email)) {
-    return { error: "Only the configured portal administrator can review applications." };
+  if (!data.user?.id || !(await isPortalAdmin(supabase))) {
+    return { error: "Only portal administrators can review applications." };
   }
 
   if (applicationType === "education") {

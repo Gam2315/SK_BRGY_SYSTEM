@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
-import { isAdminEmail } from "@/lib/supabase/config";
+import { isPortalAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 
 export type AnnouncementActionState = {
@@ -20,8 +20,8 @@ async function getAdministrator() {
     return { error: "Could not verify your session. Sign in again." } as const;
   }
 
-  if (!data.user?.id || !data.user.email || !isAdminEmail(data.user.email)) {
-    return { error: "Only the configured portal administrator can manage announcements." } as const;
+  if (!data.user?.id || !(await isPortalAdmin(supabase))) {
+    return { error: "Only portal administrators can manage announcements." } as const;
   }
 
   return { supabase, user: data.user } as const;

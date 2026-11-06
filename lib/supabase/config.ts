@@ -8,9 +8,3 @@ export function getSupabaseConfig() {
 
   return { url, publishableKey };
 }
-
-export function isAdminEmail(email: string | undefined) {
-  const adminEmail = process.env.BARANGAY_ADMIN_EMAIL?.trim().toLowerCase();
-
-  return Boolean(adminEmail && email?.trim().toLowerCase() === adminEmail);
-}
