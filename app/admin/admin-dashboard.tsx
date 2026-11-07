@@ -82,6 +82,53 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
     );
   }
 
+  if (page === "concern-reports") {
+    const { data: concernReports, error: concernReportsError } = await supabase
+      .from("concern_reports")
+      .select("id, reporter_name, concern, image_path, submitted_at")
+      .order("submitted_at", { ascending: false });
+
+    const signedConcernReports = await Promise.all(
+      (concernReports ?? []).map(async (report) => {
+        if (!report.image_path) {
+          return { ...report, image_url: null };
+        }
+
+        const { data, error } = await supabase.storage
+          .from("concern-report-images")
+          .createSignedUrl(report.image_path, 60 * 60);
+        if (error) {
+          console.error(
+            "Could not create concern report picture link:",
+            error.message,
+          );
+          return { ...report, image_url: null };
+        }
+
+        return { ...report, image_url: data.signedUrl };
+      }),
+    );
+    const pictureLinkError = signedConcernReports.some(
+      (report) => report.image_path && !report.image_url,
+    )
+      ? "Some attached pictures could not be opened. Please refresh or check the private image bucket setup."
+      : undefined;
+
+    return (
+      <PortalDashboard
+        email={email}
+        role="admin"
+        adminPage={page}
+        concernReports={signedConcernReports}
+        concernReportsError={
+          [concernReportsError?.message, pictureLinkError]
+            .filter(Boolean)
+            .join(" ") || undefined
+        }
+      />
+    );
+  }
+
   const [
     { data: applications, error: applicationsError },
     { data: jobseekerApplications, error: jobseekerApplicationsError },

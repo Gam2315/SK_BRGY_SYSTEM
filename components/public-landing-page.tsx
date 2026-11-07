@@ -3,6 +3,7 @@
 import Image from "next/image";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState, ViewTransition } from "react";
+import ConcernReportForm from "@/components/concern-report-form";
 
 type IconName =
   | "arrow"
@@ -55,6 +56,7 @@ type PublicBarangayOfficial = {
 type LandingSection =
   | "home"
   | "services"
+  | "concerns"
   | "announcements"
   | "community-posts"
   | "officials"
@@ -247,6 +249,7 @@ export default function PublicLandingPage({
       "announcements",
       "community-posts",
       "officials",
+      "concerns",
       "about",
     ];
     let frame = 0;
@@ -588,7 +591,11 @@ export default function PublicLandingPage({
                 {visibleServices.map((service, index) => (
                   <a
                     className="service-card"
-                    href="#contact"
+                    href={
+                      service.name === "Report a concern"
+                        ? "#concerns"
+                        : "#contact"
+                    }
                     key={service.name}
                     style={{ animationDelay: `${index * 55}ms` }}
                   >
@@ -864,6 +871,12 @@ export default function PublicLandingPage({
                 Contact the barangay hall <Icon name="arrow" size={15} />
               </a>
             </div>
+          </div>
+        </section>
+
+        <section className="concern-report-section section-pad" id="concerns">
+          <div className="container">
+            <ConcernReportForm />
           </div>
         </section>
 

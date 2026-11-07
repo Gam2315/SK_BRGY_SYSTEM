@@ -10,6 +10,7 @@ const adminPages = [
   "jobseeker-applicants",
   "activity-logs",
   "officials",
+  "concern-reports",
 ] as const;
 
 export default function Page({

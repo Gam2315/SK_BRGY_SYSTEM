@@ -84,6 +84,14 @@ export type ActivityLog = {
   created_at: string;
 };
 
+export type ConcernReport = {
+  id: string;
+  reporter_name: string | null;
+  concern: string;
+  image_path: string | null;
+  submitted_at: string;
+};
+
 export type CommunityPost = {
   id: string;
   kind: "activity" | "project";
@@ -225,6 +233,16 @@ export type Database = {
         Insert: Omit<ActivityLog, "id" | "created_at"> & {
           id?: string;
           created_at?: string;
+        };
+        Update: never;
+        Relationships: [];
+      };
+      concern_reports: {
+        Row: ConcernReport;
+        Insert: Omit<ConcernReport, "id" | "submitted_at" | "image_path"> & {
+          id?: string;
+          submitted_at?: string;
+          image_path?: string | null;
         };
         Update: never;
         Relationships: [];

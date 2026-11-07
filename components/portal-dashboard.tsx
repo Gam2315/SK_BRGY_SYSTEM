@@ -19,6 +19,7 @@ import type {
   BarangayOfficial,
   CommunityPostWithImages,
   ApplicationDocumentLink,
+  ConcernReport,
   EducationalAssistanceApplication,
   JobseekerApplication,
 } from "@/lib/supabase/database.types";
@@ -41,7 +42,8 @@ export type AdminDashboardSection =
   | "claim-assistance"
   | "jobseeker-applicants"
   | "activity-logs"
-  | "officials";
+  | "officials"
+  | "concern-reports";
 
 type PortalDashboardProps = {
   email: string;
@@ -64,6 +66,8 @@ type PortalDashboardProps = {
   barangayOfficialsError?: string;
   activityLogs?: ActivityLog[];
   activityLogsError?: string;
+  concernReports?: (ConcernReport & { image_url: string | null })[];
+  concernReportsError?: string;
   announcementSubscribed?: boolean;
   announcementSubscriptionError?: string;
   role: "admin" | "resident";
@@ -104,6 +108,8 @@ export default function PortalDashboard({
   barangayOfficialsError,
   activityLogs = [],
   activityLogsError,
+  concernReports = [],
+  concernReportsError,
   announcementSubscribed = false,
   announcementSubscriptionError,
   role,
@@ -177,6 +183,8 @@ export default function PortalDashboard({
             ? "Activity logs"
             : adminPage === "officials"
               ? "Manage Barangay Officials"
+              : adminPage === "concern-reports"
+                ? "Concern reports"
             : "Admin dashboard";
 
   return (
@@ -241,6 +249,12 @@ export default function PortalDashboard({
                 href="/admin/officials"
               >
                 <span aria-hidden="true">♙</span> Manage Barangay Officials
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "concern-reports" ? " active" : ""}`}
+                href="/admin/concern-reports"
+              >
+                <span aria-hidden="true">!</span> Concern reports
               </Link>
               <Link
                 className={`dashboard-nav-link${selectedSection === "education-applicants" ? " active" : ""}`}
@@ -391,6 +405,8 @@ export default function PortalDashboard({
                 barangayOfficialsError={barangayOfficialsError}
                 activityLogs={activityLogs}
                 activityLogsError={activityLogsError}
+                concernReports={concernReports}
+                concernReportsError={concernReportsError}
                 page={adminPage}
                 onPreviewDocument={setSelectedDocument}
               />
@@ -503,6 +519,8 @@ function AdminOverview({
   barangayOfficialsError,
   activityLogs,
   activityLogsError,
+  concernReports,
+  concernReportsError,
   onPreviewDocument,
 }: {
   page: AdminDashboardSection;
@@ -520,6 +538,8 @@ function AdminOverview({
   barangayOfficialsError?: string;
   activityLogs: ActivityLog[];
   activityLogsError?: string;
+  concernReports: (ConcernReport & { image_url: string | null })[];
+  concernReportsError?: string;
   onPreviewDocument: (document: ApplicationDocumentLink) => void;
 }) {
   const highSchoolApplications = applications.filter(
@@ -650,6 +670,83 @@ function AdminOverview({
           officials={barangayOfficials}
           error={barangayOfficialsError}
         />
+      )}
+
+      {page === "concern-reports" && (
+        <section
+          aria-labelledby="concern-reports-title"
+          className="admin-activity-logs"
+          id="concern-reports"
+        >
+          <div className="dashboard-section-title">
+            <div>
+              <span className="section-kicker">COMMUNITY FEEDBACK</span>
+              <h2 id="concern-reports-title">Concern reports</h2>
+            </div>
+            <span className="dashboard-section-note">
+              {concernReports.length}{" "}
+              {concernReports.length === 1 ? "report" : "reports"}
+            </span>
+          </div>
+          {concernReportsError ? (
+            <div className="admin-activity-error" role="alert">
+              <strong>Concern reports could not be loaded</strong>
+              <p>{concernReportsError}</p>
+              <span>
+                Run <code>supabase/concern-reports.sql</code> in the Supabase
+                SQL Editor and confirm this administrator is listed in{" "}
+                <code>public.portal_admins</code>.
+              </span>
+            </div>
+          ) : concernReports.length === 0 ? (
+            <p className="admin-activity-empty">
+              No concerns have been submitted yet.
+            </p>
+          ) : (
+            <div className="admin-activity-table-scroll">
+              <table className="admin-activity-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Reported by</th>
+                    <th scope="col">Concern</th>
+                    <th scope="col">Date submitted</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {concernReports.map((report) => (
+                    <tr key={report.id}>
+                      <td>
+                        <strong>{report.reporter_name || "Anonymous"}</strong>
+                      </td>
+                      <td className="concern-report-table-message">
+                        {report.concern}
+                        {report.image_url && (
+                          <a
+                            className="concern-report-image-link"
+                            href={report.image_url}
+                            rel="noreferrer"
+                            target="_blank"
+                          >
+                            View attached picture
+                          </a>
+                        )}
+                      </td>
+                      <td>
+                        <time dateTime={report.submitted_at}>
+                          {new Intl.DateTimeFormat("en-PH", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                            timeZone: "Asia/Manila",
+                          }).format(new Date(report.submitted_at))}
+                        </time>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </section>
       )}
 
       {page === "education-applicants" && (

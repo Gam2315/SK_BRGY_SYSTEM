@@ -174,3 +174,12 @@ script. The admin dashboard then shows the latest 100 sign-ins, sign-outs,
 application submissions and reviews, announcement changes, and subscription
 preference updates. Activity records are readable only by accounts listed in
 `public.portal_admins`.
+
+To accept public reports, run `supabase/concern-reports.sql` in the Supabase SQL
+Editor. Residents can submit a concern from the public landing page without
+signing in; the name is optional and appears as "Anonymous" when omitted.
+Residents can optionally attach one JPG, PNG, or WebP picture up to 5 MB.
+Reports and attached pictures are available only to accounts listed in
+`public.portal_admins`, and administrators can review them at
+`/admin/concern-reports`. Rerun the script after updates to apply schema,
+storage bucket, and policy changes.

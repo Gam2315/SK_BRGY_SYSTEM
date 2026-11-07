@@ -740,6 +740,133 @@ textarea:focus-visible {
   font-size: 10px;
 }
 
+.concern-report-section {
+  background: #f5f6f8;
+}
+
+.concern-report-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  padding: clamp(22px, 4vw, 42px);
+  background: #fff;
+  border: 1px solid #e6e9ed;
+  border-radius: 10px;
+  box-shadow: 0 9px 25px rgb(34 54 41 / 4%);
+}
+
+.concern-report-copy {
+  max-width: 760px;
+}
+
+.concern-report-copy h2 {
+  margin: 0;
+  color: #202d3d;
+  font-size: clamp(25px, 3vw, 32px);
+  font-weight: 650;
+  letter-spacing: -0.048em;
+  line-height: 1.2;
+}
+
+.concern-report-copy > p {
+  color: #75827d;
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.concern-report-copy .concern-report-privacy {
+  padding-left: 11px;
+  color: #64737d;
+  border-left: 2px solid #dfe5eb;
+  font-size: 10px;
+}
+
+.concern-report-form {
+  display: grid;
+  width: 100%;
+  max-width: 760px;
+  gap: 13px;
+  align-content: start;
+}
+
+.concern-report-form label {
+  display: grid;
+  min-width: 0;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 6px;
+  color: #48535f;
+  font-size: 11px;
+  font-weight: 640;
+}
+
+.concern-report-form label small {
+  color: #77847c;
+  font-size: 9px;
+  font-weight: 400;
+}
+
+.concern-report-form input,
+.concern-report-form textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 10px 11px;
+  color: #293543;
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+
+.concern-report-form textarea {
+  min-height: 130px;
+  resize: vertical;
+}
+
+.concern-report-form input[type="file"] {
+  padding: 8px;
+  background: #f9fafb;
+}
+
+.concern-report-form input:focus,
+.concern-report-form textarea:focus {
+  border-color: #92a5bc;
+  outline: 3px solid rgb(80 139 103 / 9%);
+}
+
+.concern-report-form > .button {
+  justify-self: start;
+}
+
+.concern-report-form > .button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.concern-report-message {
+  margin: 0;
+  padding: 10px 12px;
+  border: 1px solid;
+  border-radius: 5px;
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.concern-report-message.error {
+  color: #8d4038;
+  background: #fff2ef;
+  border-color: #f0d2cc;
+}
+
+.concern-report-message.success {
+  color: #356143;
+  background: #eff8f1;
+  border-color: #d3e8d8;
+}
+
 .footnote-icon {
   display: grid;
   width: 23px;
@@ -2902,6 +3029,22 @@ textarea:focus-visible {
 .admin-activity-table td:last-child {
   min-width: 155px;
   white-space: nowrap;
+}
+
+.concern-report-table-message {
+  min-width: 280px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.concern-report-image-link {
+  display: block;
+  width: fit-content;
+  margin-top: 8px;
+  color: var(--blue);
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
 }
 
 .admin-activity-empty {
