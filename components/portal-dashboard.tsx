@@ -801,10 +801,50 @@ function AdminOverview({
             <span className="section-kicker">EMPLOYMENT ASSISTANCE</span>
             <h2>Jobseeker applicants</h2>
           </div>
-          <span className="dashboard-section-note">
-            {jobseekerApplications.length}{" "}
-            {jobseekerApplications.length === 1 ? "applicant" : "applicants"}
-          </span>
+          <div className="admin-applications-title-actions">
+            <span className="dashboard-section-note">
+              {jobseekerApplications.length}{" "}
+              {jobseekerApplications.length === 1 ? "applicant" : "applicants"}
+            </span>
+            <button
+              className="admin-applications-export"
+              disabled={
+                Boolean(jobseekerApplicationsError) ||
+                jobseekerApplications.length === 0
+              }
+              onClick={() =>
+                void downloadExcel(
+                  "jobseeker-applicants.xlsx",
+                  [
+                    "Applicant",
+                    "Email",
+                    "Contact",
+                    "Preferred position",
+                    "Skills / experience",
+                    "Status",
+                    "Review notes",
+                    "Submitted at (Manila)",
+                    "Reviewed at (Manila)",
+                  ],
+                  jobseekerApplications.map((application) => [
+                    application.applicant_name,
+                    application.applicant_email,
+                    application.contact_number,
+                    application.desired_position,
+                    application.skills_experience,
+                    application.status,
+                    application.review_notes,
+                    application.submitted_at,
+                    application.reviewed_at,
+                  ]),
+                  [7, 8],
+                )
+              }
+              type="button"
+            >
+              Export Excel
+            </button>
+          </div>
         </div>
 
         {jobseekerApplicationsError ? (
@@ -983,20 +1023,72 @@ function ApplicationList({
   educationLevel: string;
   onPreviewDocument: (document: ApplicationDocumentLink) => void;
 }) {
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
+  const pageCount = Math.max(1, Math.ceil(applications.length / pageSize));
+  const displayedPage = Math.min(currentPage, pageCount);
+  const firstApplicationIndex = (displayedPage - 1) * pageSize;
+  const visibleApplications = applications.slice(
+    firstApplicationIndex,
+    firstApplicationIndex + pageSize,
+  );
+
   return (
     <section className="admin-application-group">
       <div className="admin-application-group-heading">
         <h3>{educationLevel}</h3>
-        <span>{applications.length}</span>
+        <div className="admin-application-group-actions">
+          <span>{applications.length}</span>
+          <button
+            className="admin-applications-export"
+            disabled={applications.length === 0}
+            onClick={() =>
+              void downloadExcel(
+                `educational-assistance-${educationLevel.toLowerCase().replaceAll(" ", "-")}-applicants.xlsx`,
+                [
+                  "Applicant",
+                  "Email",
+                  "Contact",
+                  "Education level",
+                  "School",
+                  "Year / grade level",
+                  "Status",
+                  "Review notes",
+                  "Submitted at (Manila)",
+                  "Reviewed at (Manila)",
+                  "Claimed at (Manila)",
+                ],
+                applications.map((application) => [
+                  application.applicant_name,
+                  application.applicant_email,
+                  application.contact_number,
+                  educationLevel,
+                  application.school_name,
+                  application.year_or_grade_level,
+                  application.status,
+                  application.review_notes,
+                  application.submitted_at,
+                  application.reviewed_at,
+                  application.claimed_at,
+                ]),
+                [8, 9, 10],
+              )
+            }
+            type="button"
+          >
+            Export Excel
+          </button>
+        </div>
       </div>
       {applications.length === 0 ? (
         <p className="admin-applications-empty">
           No {educationLevel.toLowerCase()} applications yet.
         </p>
       ) : (
-        <ul className="admin-application-list">
-          {applications.map((application) => (
-            <li className="admin-application-item" key={application.id}>
+        <>
+          <ul className="admin-application-list">
+            {visibleApplications.map((application) => (
+              <li className="admin-application-item" key={application.id}>
               <div className="admin-application-primary">
                 <strong>{application.applicant_name}</strong>
                 <span>{application.applicant_email}</span>
@@ -1086,11 +1178,175 @@ function ApplicationList({
                   )}
                 />
               )}
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+          {pageCount > 1 && (
+            <nav
+              aria-label={`${educationLevel} applicant pages`}
+              className="admin-application-pagination"
+            >
+              <span aria-live="polite">
+                Showing {firstApplicationIndex + 1}–
+                {Math.min(firstApplicationIndex + pageSize, applications.length)}{" "}
+                of {applications.length}
+              </span>
+              <div>
+                <button
+                  disabled={displayedPage === 1}
+                  onClick={() => setCurrentPage(displayedPage - 1)}
+                  type="button"
+                >
+                  Previous
+                </button>
+                <span>
+                  Page {displayedPage} of {pageCount}
+                </span>
+                <button
+                  disabled={displayedPage === pageCount}
+                  onClick={() => setCurrentPage(displayedPage + 1)}
+                  type="button"
+                >
+                  Next
+                </button>
+              </div>
+            </nav>
+          )}
+        </>
       )}
     </section>
+  );
+}
+
+async function downloadExcel(
+  filename: string,
+  headers: string[],
+  rows: (string | number | null | undefined)[][],
+  dateColumns: number[],
+) {
+  try {
+    const ExcelJS = await import("exceljs");
+    const workbook = new ExcelJS.Workbook();
+    workbook.creator = "Centro Norte Barangay System";
+    workbook.created = new Date();
+
+    const worksheet = workbook.addWorksheet("Applicants", {
+      views: [{ state: "frozen", ySplit: 1 }],
+    });
+    const dateColumnIndexes = new Set(dateColumns);
+    worksheet.columns = headers.map((header, index) => ({
+      header,
+      key: `column${index}`,
+      width: Math.min(
+        42,
+        Math.max(
+          14,
+          header.length + 2,
+          ...rows.map((row) => String(row[index] ?? "").length + 2),
+        ),
+      ),
+    }));
+    worksheet.addRows(
+      rows.map((row) =>
+        row.map((value, index) =>
+          dateColumnIndexes.has(index) && typeof value === "string"
+            ? toManilaExcelDate(value)
+            : (value ?? ""),
+        ),
+      ),
+    );
+    worksheet.autoFilter = {
+      from: { row: 1, column: 1 },
+      to: { row: 1, column: headers.length },
+    };
+    worksheet.pageSetup = {
+      orientation: "landscape",
+      fitToPage: true,
+      fitToWidth: 1,
+    };
+
+    worksheet.getRow(1).height = 24;
+    worksheet.getRow(1).eachCell((cell) => {
+      cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 11 };
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF384D66" },
+      };
+      cell.alignment = { vertical: "middle", wrapText: true };
+    });
+
+    worksheet.eachRow((row, rowNumber) => {
+      if (rowNumber === 1) return;
+      row.eachCell({ includeEmpty: true }, (cell, columnNumber) => {
+        const columnIndex = columnNumber - 1;
+        cell.alignment = {
+          vertical: "top",
+          wrapText:
+            headers[columnIndex] === "Review notes" ||
+            headers[columnIndex] === "Skills / experience",
+        };
+        cell.border = {
+          bottom: { style: "hair", color: { argb: "FFDCE3EA" } },
+        };
+        if (rowNumber % 2 === 0) {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FFF4F7FA" },
+          };
+        }
+        if (dateColumnIndexes.has(columnIndex) && cell.value instanceof Date) {
+          cell.numFmt = "yyyy-mm-dd hh:mm";
+        }
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const blob = new Blob([buffer], {
+      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error("Could not export applicant spreadsheet:", error);
+    window.alert("The applicant spreadsheet could not be created. Please try again.");
+  }
+}
+
+function toManilaExcelDate(value: string): Date | string {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hourCycle: "h23",
+  })
+    .formatToParts(date)
+    .reduce<Record<string, string>>((result, part) => {
+      result[part.type] = part.value;
+      return result;
+    }, {});
+
+  return new Date(
+    Number(parts.year),
+    Number(parts.month) - 1,
+    Number(parts.day),
+    Number(parts.hour),
+    Number(parts.minute),
+    Number(parts.second),
   );
 }
 
