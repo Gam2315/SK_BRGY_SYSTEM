@@ -98,6 +98,17 @@ section of the public landing page. Each post includes a title, description,
 type, activity or completion date, and up to three optional JPG, PNG, or WebP
 pictures (4 MB each). These posts do not send email notifications.
 
+To manage the officials shown on the public landing page, run
+`supabase/barangay-officials.sql` in the Supabase SQL Editor. The script creates
+the five roster positions and public/admin access policies. Administrators can
+edit each official's name, phone, and email from the Barangay officials section
+of `/admin`; profile pictures accept JPG, PNG, or WebP up to 5 MB and can be
+cropped and repositioned before saving. Select
+"Publish on public portal" to make a named official visible.
+Only published details are public, and unpublished positions continue to show
+the "Official details not yet published" message. Rerun the setup SQL after
+updating it to migrate the roster label from "SK Chairperson" to "SK Chairman".
+
 To enable Google sign-in, configure the Google OAuth client ID and secret in
 Supabase under Authentication → Providers → Google. Add the Supabase callback
 URL shown in the provider settings to the Google Cloud OAuth client's
@@ -141,6 +152,10 @@ check confirms only that required information and document uploads are
 present; administrators must review document contents and make the final
 eligibility decision. Educational assistance requires a school assessment and
 front/back school ID; jobseeker applications require front/back of a valid ID.
+
+All optional contact-number fields accept Philippine numbers beginning with
+`+63` (for example, `+63 917 123 4567`); numbers can include spaces, hyphens,
+or parentheses for readability.
 Documents accept JPG, PNG, WebP, or PDF files up to 5 MB each, are stored in
 the private `application-documents` bucket, and are available to applicants
 and authorized administrators through temporary signed links.

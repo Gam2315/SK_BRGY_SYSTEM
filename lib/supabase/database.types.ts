@@ -101,6 +101,18 @@ export type CommunityPostWithImages = CommunityPost & {
   image_urls: string[];
 };
 
+export type BarangayOfficial = {
+  id: string;
+  position: string;
+  full_name: string | null;
+  phone: string | null;
+  email: string | null;
+  photo_path: string | null;
+  is_published: boolean;
+  sort_order: number;
+  updated_at: string;
+};
+
 type EducationalAssistanceApplicationInsert = Omit<
   EducationalAssistanceApplication,
   "id" | "submitted_at" | "review_notes" | "reviewed_at" | "reviewed_by"
@@ -197,6 +209,15 @@ export type Database = {
           updated_at?: string;
         };
         Update: Partial<Omit<CommunityPost, "id" | "created_at">>;
+        Relationships: [];
+      };
+      barangay_officials: {
+        Row: BarangayOfficial;
+        Insert: Omit<BarangayOfficial, "id" | "updated_at"> & {
+          id?: string;
+          updated_at?: string;
+        };
+        Update: Partial<Omit<BarangayOfficial, "id">>;
         Relationships: [];
       };
       activity_logs: {

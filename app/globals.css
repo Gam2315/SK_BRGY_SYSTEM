@@ -4160,6 +4160,7 @@ textarea:focus-visible {
   border-radius: 9px;
 }
 
+.admin-announcement-heading h2,
 .admin-announcement-heading h3 {
   margin: 6px 0 0;
   color: #293543;
@@ -4313,6 +4314,188 @@ textarea:focus-visible {
   gap: 8px;
   color: #687279;
   font-size: 10px;
+}
+
+.admin-officials-editor {
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+}
+
+.admin-official-position-select {
+  display: grid;
+  width: min(100%, 420px);
+  gap: 5px;
+  color: #48535f;
+  font-size: 10px;
+  font-weight: 640;
+}
+
+.admin-official-position-select select {
+  width: 100%;
+  padding: 9px 10px;
+  color: #293543;
+  background: #fff;
+  border: 1px solid #dfe3e8;
+  border-radius: 5px;
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.admin-official-item {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+  background: #fafbfc;
+  border: 1px solid #e7eaed;
+  border-radius: 7px;
+}
+
+.admin-official-item .admin-announcement-form {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: end;
+}
+
+.admin-official-photo-field {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: 12px;
+}
+
+.admin-official-photo-preview,
+.admin-official-photo-placeholder {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 72px;
+  border-radius: 50%;
+}
+
+.admin-official-photo-preview {
+  object-fit: cover;
+}
+
+.admin-official-photo-placeholder {
+  display: grid;
+  place-items: center;
+  color: #52657b;
+  background: #edf1f5;
+  font-size: 24px;
+}
+
+.admin-official-photo-field label {
+  min-width: 0;
+  flex: 1;
+}
+
+.official-photo-crop-backdrop {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  place-items: center;
+  padding: 18px;
+  background: rgb(20 30 43 / 65%);
+}
+
+.official-photo-crop-dialog {
+  display: grid;
+  width: min(100%, 380px);
+  justify-items: center;
+  gap: 12px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 9px;
+  box-shadow: 0 16px 48px rgb(20 30 43 / 24%);
+}
+
+.official-photo-crop-dialog h3,
+.official-photo-crop-dialog p {
+  margin: 0;
+}
+
+.official-photo-crop-dialog h3 {
+  color: #293543;
+  font-size: 16px;
+}
+
+.official-photo-crop-dialog > p {
+  color: #77847c;
+  font-size: 11px;
+  text-align: center;
+}
+
+.official-photo-crop-viewport {
+  position: relative;
+  max-width: 100%;
+  overflow: hidden;
+  background: #202936;
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+.official-photo-crop-viewport:active {
+  cursor: grabbing;
+}
+
+.official-photo-crop-viewport img {
+  position: absolute;
+  max-width: none;
+  pointer-events: none;
+  user-select: none;
+  transform: translate(-50%, -50%);
+}
+
+.official-photo-crop-zoom {
+  display: grid;
+  width: 100%;
+  gap: 5px;
+  color: #48535f;
+  font-size: 10px;
+}
+
+.official-photo-crop-zoom input {
+  width: 100%;
+  accent-color: var(--blue);
+}
+
+.official-photo-crop-actions {
+  display: flex;
+  width: 100%;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.official-photo-crop-actions button {
+  min-height: 34px;
+  padding: 0 12px;
+  color: #344b3e;
+  background: #edf1f5;
+  border: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.official-photo-crop-actions button:last-child {
+  color: #fff;
+  background: var(--blue);
+}
+
+.official-photo-crop-actions button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.admin-official-item .announcement-action-message {
+  margin: 0;
 }
 
 .admin-community-post-images {
@@ -4617,6 +4800,14 @@ textarea:focus-visible {
   font-size: 15px;
 }
 
+.main-content .officials-profile-photo {
+  width: 48px;
+  height: 48px;
+  flex: 0 0 48px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
 .main-content .officials-list li > span:last-child {
   display: flex;
   min-width: 0;
@@ -4633,6 +4824,23 @@ textarea:focus-visible {
 .main-content .officials-list small {
   color: #849087;
   font-size: 11px;
+}
+
+.main-content .officials-contact-details {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.main-content .officials-contact-details a {
+  width: fit-content;
+  color: #607387;
+  font-size: 10px;
+  overflow-wrap: anywhere;
+}
+
+.main-content .officials-contact-details a:hover {
+  color: var(--blue);
 }
 
 .main-content .officials-contact {
@@ -4659,6 +4867,12 @@ textarea:focus-visible {
   }
 
   .main-content .officials-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .admin-official-item .admin-announcement-form {
     grid-template-columns: 1fr;
   }
 }

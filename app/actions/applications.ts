@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
 import { createClient } from "@/lib/supabase/server";
+import { isValidPhilippinePhoneNumber } from "@/lib/philippine-phone";
 import type { EducationLevel } from "@/lib/supabase/database.types";
 
 const APPLICATION_DOCUMENT_BUCKET = "application-documents";
@@ -168,9 +169,14 @@ export async function submitEducationalAssistanceApplication(
     applicantName.length > 150 ||
     schoolName.length > 200 ||
     yearOrGradeLevel.length > 80 ||
-    (contactNumber && contactNumber.length > 40)
+    (contactNumber &&
+      (contactNumber.length > 40 ||
+        !isValidPhilippinePhoneNumber(contactNumber)))
   ) {
-    return { error: "Please check the length of the information you entered." };
+    return {
+      error:
+        "Check the information you entered. Contact numbers must use +63 followed by a valid Philippine number.",
+    };
   }
 
   const applicant = await getApplicant();
@@ -297,10 +303,15 @@ export async function submitJobseekerApplication(
   if (
     applicantName.length > 150 ||
     desiredPosition.length > 150 ||
-    (contactNumber && contactNumber.length > 40) ||
+    (contactNumber &&
+      (contactNumber.length > 40 ||
+        !isValidPhilippinePhoneNumber(contactNumber))) ||
     (skillsExperience && skillsExperience.length > 2000)
   ) {
-    return { error: "Please check the length of the information you entered." };
+    return {
+      error:
+        "Check the information you entered. Contact numbers must use +63 followed by a valid Philippine number.",
+    };
   }
 
   const applicant = await getApplicant();

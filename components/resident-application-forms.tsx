@@ -106,8 +106,12 @@ export default function ResidentApplicationForms({
                   autoComplete="tel"
                   maxLength={40}
                   name="contact_number"
+                  pattern="\+63[ ()-]?[2-9][0-9 ()-]{7,12}[0-9]"
+                  placeholder="+63 917 123 4567"
+                  title="Use +63 followed by a valid Philippine phone number."
                   type="tel"
                 />
+                <small>Enter a Philippine number starting with +63.</small>
               </label>
               <label>
                 Education level
@@ -239,8 +243,12 @@ export default function ResidentApplicationForms({
                 autoComplete="tel"
                 maxLength={40}
                 name="contact_number"
+                pattern="\+63[ ()-]?[2-9][0-9 ()-]{7,12}[0-9]"
+                placeholder="+63 917 123 4567"
+                title="Use +63 followed by a valid Philippine phone number."
                 type="tel"
               />
+              <small>Enter a Philippine number starting with +63.</small>
             </label>
             <label>
               Preferred position or type of work

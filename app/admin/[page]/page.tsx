@@ -9,6 +9,7 @@ const adminPages = [
   "claim-assistance",
   "jobseeker-applicants",
   "activity-logs",
+  "officials",
 ] as const;
 
 export default function Page({

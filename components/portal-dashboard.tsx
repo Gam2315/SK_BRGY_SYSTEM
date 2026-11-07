@@ -6,6 +6,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "@/app/actions/auth";
 import AdminAnnouncementManager from "@/components/admin-announcement-manager";
+import AdminBarangayOfficialsManager from "@/components/admin-barangay-officials-manager";
 import AdminCommunityPostsManager from "@/components/admin-community-posts-manager";
 import AdminApplicationReviewControls from "@/components/admin-application-review-controls";
 import AdminEducationClaimScanner from "@/components/admin-education-claim-scanner";
@@ -15,6 +16,7 @@ import ResidentAnnouncementSubscription from "@/components/resident-announcement
 import type {
   Announcement,
   ActivityLog,
+  BarangayOfficial,
   CommunityPostWithImages,
   ApplicationDocumentLink,
   EducationalAssistanceApplication,
@@ -29,13 +31,17 @@ type JobseekerApplicationWithDocuments = JobseekerApplication & {
   documents: ApplicationDocumentLink[];
   documentErrors: string[];
 };
+type BarangayOfficialWithPhoto = BarangayOfficial & {
+  photo_url: string | null;
+};
 
 export type AdminDashboardSection =
   | "overview"
   | "education-applicants"
   | "claim-assistance"
   | "jobseeker-applicants"
-  | "activity-logs";
+  | "activity-logs"
+  | "officials";
 
 type PortalDashboardProps = {
   email: string;
@@ -54,6 +60,8 @@ type PortalDashboardProps = {
   announcementsError?: string;
   communityPosts?: CommunityPostWithImages[];
   communityPostsError?: string;
+  barangayOfficials?: BarangayOfficialWithPhoto[];
+  barangayOfficialsError?: string;
   activityLogs?: ActivityLog[];
   activityLogsError?: string;
   announcementSubscribed?: boolean;
@@ -65,6 +73,7 @@ const adminNavigationSections = [
   "services",
   "announcements",
   "community-posts",
+  "officials",
   "account",
 ];
 const residentNavigationSections = [
@@ -91,6 +100,8 @@ export default function PortalDashboard({
   announcementsError,
   communityPosts = [],
   communityPostsError,
+  barangayOfficials = [],
+  barangayOfficialsError,
   activityLogs = [],
   activityLogsError,
   announcementSubscribed = false,
@@ -164,6 +175,8 @@ export default function PortalDashboard({
           ? "Jobseeker applicants"
           : adminPage === "activity-logs"
             ? "Activity logs"
+            : adminPage === "officials"
+              ? "Manage Barangay Officials"
             : "Admin dashboard";
 
   return (
@@ -222,6 +235,12 @@ export default function PortalDashboard({
                 onClick={() => setActiveSection("community-posts")}
               >
                 <span aria-hidden="true">◇</span> Activities &amp; projects
+              </Link>
+              <Link
+                className={`dashboard-nav-link${selectedSection === "officials" ? " active" : ""}`}
+                href="/admin/officials"
+              >
+                <span aria-hidden="true">♙</span> Manage Barangay Officials
               </Link>
               <Link
                 className={`dashboard-nav-link${selectedSection === "education-applicants" ? " active" : ""}`}
@@ -368,6 +387,8 @@ export default function PortalDashboard({
                 announcementsError={announcementsError}
                 communityPosts={communityPosts}
                 communityPostsError={communityPostsError}
+                barangayOfficials={barangayOfficials}
+                barangayOfficialsError={barangayOfficialsError}
                 activityLogs={activityLogs}
                 activityLogsError={activityLogsError}
                 page={adminPage}
@@ -478,6 +499,8 @@ function AdminOverview({
   announcementsError,
   communityPosts,
   communityPostsError,
+  barangayOfficials,
+  barangayOfficialsError,
   activityLogs,
   activityLogsError,
   onPreviewDocument,
@@ -493,6 +516,8 @@ function AdminOverview({
   announcementsError?: string;
   communityPosts: CommunityPostWithImages[];
   communityPostsError?: string;
+  barangayOfficials: BarangayOfficialWithPhoto[];
+  barangayOfficialsError?: string;
   activityLogs: ActivityLog[];
   activityLogsError?: string;
   onPreviewDocument: (document: ApplicationDocumentLink) => void;
@@ -589,6 +614,20 @@ function AdminOverview({
             Manage posts <span aria-hidden="true">→</span>
           </a>
         </article>
+        <article className="admin-tool-card">
+          <span className="admin-tool-icon gold" aria-hidden="true">
+            ♙
+          </span>
+          <span className="admin-tool-label">PUBLIC PORTAL</span>
+          <h3>Manage Barangay Officials</h3>
+          <p>
+            Update official names and contacts, and choose which details are
+            displayed publicly.
+          </p>
+          <Link href="/admin/officials">
+            Manage officials <span aria-hidden="true">→</span>
+          </Link>
+        </article>
       </div>
       <p className="dashboard-data-note">
         <span aria-hidden="true">i</span>
@@ -604,6 +643,13 @@ function AdminOverview({
         error={communityPostsError}
       />
         </>
+      )}
+
+      {page === "officials" && (
+        <AdminBarangayOfficialsManager
+          officials={barangayOfficials}
+          error={barangayOfficialsError}
+        />
       )}
 
       {page === "education-applicants" && (

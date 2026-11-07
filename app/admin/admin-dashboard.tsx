@@ -56,6 +56,32 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
     );
   }
 
+  if (page === "officials") {
+    const { data: officials, error: officialsError } = await supabase
+      .from("barangay_officials")
+      .select(
+        "id, position, full_name, phone, email, photo_path, is_published, sort_order, updated_at",
+      )
+      .order("sort_order", { ascending: true });
+
+    return (
+      <PortalDashboard
+        email={email}
+        role="admin"
+        adminPage={page}
+        barangayOfficials={(officials ?? []).map((official) => ({
+          ...official,
+          photo_url: official.photo_path
+            ? supabase.storage
+                .from("barangay-official-photos")
+                .getPublicUrl(official.photo_path).data.publicUrl
+            : null,
+        }))}
+        barangayOfficialsError={officialsError?.message}
+      />
+    );
+  }
+
   const [
     { data: applications, error: applicationsError },
     { data: jobseekerApplications, error: jobseekerApplicationsError },

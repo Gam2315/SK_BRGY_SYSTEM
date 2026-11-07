@@ -42,6 +42,16 @@ type PublicCommunityPost = {
   image_urls: string[];
 };
 
+type PublicBarangayOfficial = {
+  id: string;
+  position: string;
+  full_name: string;
+  phone: string | null;
+  email: string | null;
+  sort_order: number;
+  photo_url: string | null;
+};
+
 type LandingSection =
   | "home"
   | "services"
@@ -96,7 +106,7 @@ const officialPositions = [
   "Barangay Kagawad",
   "Barangay Secretary",
   "Barangay Treasurer",
-  "SK Chairperson",
+  "SK Chairman",
 ];
 
 function Icon({
@@ -206,6 +216,8 @@ export default function PublicLandingPage({
   const [announcementLoadError, setAnnouncementLoadError] = useState("");
   const [communityPosts, setCommunityPosts] = useState<PublicCommunityPost[]>([]);
   const [communityPostsLoadError, setCommunityPostsLoadError] = useState("");
+  const [officials, setOfficials] = useState<PublicBarangayOfficial[]>([]);
+  const [officialsLoadError, setOfficialsLoadError] = useState("");
   const [selectedImage, setSelectedImage] = useState<{
     images: { alt: string; src: string }[];
     index: number;
@@ -268,6 +280,38 @@ export default function PublicLandingPage({
       window.removeEventListener("resize", updateActiveSection);
       window.removeEventListener("hashchange", updateActiveSection);
     };
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadOfficials() {
+      try {
+        const response = await fetch("/api/barangay-officials", {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          setOfficialsLoadError(
+            "Published official details are temporarily unavailable.",
+          );
+          return;
+        }
+        const result = (await response.json()) as {
+          officials?: PublicBarangayOfficial[];
+        };
+        setOfficials(result.officials ?? []);
+      } catch (error) {
+        if (error instanceof Error && error.name !== "AbortError") {
+          setOfficialsLoadError(
+            "Published official details are temporarily unavailable.",
+          );
+        }
+      }
+    }
+
+    void loadOfficials();
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -760,22 +804,61 @@ export default function PublicLandingPage({
             </div>
             <div className="officials-card">
               <p className="officials-note">
-                Official names and contact details have not been published in
-                this portal yet. Please contact the barangay hall to confirm
-                the current roster.
+                {officialsLoadError ||
+                  (officials.length === 0
+                    ? "Official names and contact details have not been published in this portal yet. Please contact the barangay hall to confirm the current roster."
+                    : "Only official details published by the barangay are shown here.")}
               </p>
               <ul className="officials-list">
-                {officialPositions.map((position) => (
-                  <li key={position}>
-                    <span className="officials-role-icon" aria-hidden="true">
-                      ♙
-                    </span>
-                    <span>
-                      <strong>{position}</strong>
-                      <small>Official details not yet published</small>
-                    </span>
-                  </li>
-                ))}
+                {officialPositions.map((position) => {
+                  const official = officials.find(
+                    (item) => item.position === position,
+                  );
+
+                  return (
+                    <li key={position}>
+                      {official?.photo_url ? (
+                        <Image
+                          alt={`${official.position} profile picture`}
+                          className="officials-profile-photo"
+                          height={48}
+                          src={official.photo_url}
+                          unoptimized
+                          width={48}
+                        />
+                      ) : (
+                        <span
+                          className="officials-role-icon"
+                          aria-hidden="true"
+                        >
+                          ♙
+                        </span>
+                      )}
+                      <span>
+                        <strong>{position}</strong>
+                        {official ? (
+                          <span className="officials-contact-details">
+                            <small>{official.full_name}</small>
+                            {official.phone && (
+                              <a
+                                href={`tel:${official.phone.replace(/[^\d+]/g, "")}`}
+                              >
+                                {official.phone}
+                              </a>
+                            )}
+                            {official.email && (
+                              <a href={`mailto:${official.email}`}>
+                                {official.email}
+                              </a>
+                            )}
+                          </span>
+                        ) : (
+                          <small>Official details not yet published</small>
+                        )}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
               <a className="officials-contact" href="#contact">
                 Contact the barangay hall <Icon name="arrow" size={15} />
