@@ -114,6 +114,21 @@ export default function ResidentApplicationForms({
                 <small>Enter a Philippine number starting with +63.</small>
               </label>
               <label>
+                Zone
+                <select name="zone" required>
+                  <option disabled value="">
+                    Select your zone
+                  </option>
+                  {Array.from({ length: 7 }, (_, index) => index + 1).map(
+                    (zone) => (
+                      <option key={zone} value={`Zone ${zone}`}>
+                        Zone {zone}
+                      </option>
+                    ),
+                  )}
+                </select>
+              </label>
+              <label>
                 Education level
                 <select
                   name="education_level"

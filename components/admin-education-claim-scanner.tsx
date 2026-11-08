@@ -170,6 +170,10 @@ export default function AdminEducationClaimScanner() {
                   <dd>{application.contact_number || "Not provided"}</dd>
                 </div>
                 <div>
+                  <dt>Zone</dt>
+                  <dd>{application.zone || "Not provided"}</dd>
+                </div>
+                <div>
                   <dt>Education level</dt>
                   <dd>
                     {application.education_level === "high_school"

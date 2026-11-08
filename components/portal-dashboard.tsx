@@ -1049,6 +1049,7 @@ function ApplicationList({
                   "Applicant",
                   "Email",
                   "Contact",
+                  "Zone",
                   "Education level",
                   "School",
                   "Year / grade level",
@@ -1062,6 +1063,7 @@ function ApplicationList({
                   application.applicant_name,
                   application.applicant_email,
                   application.contact_number,
+                  application.zone,
                   educationLevel,
                   application.school_name,
                   application.year_or_grade_level,
@@ -1105,6 +1107,10 @@ function ApplicationList({
                 <div>
                   <dt>Contact</dt>
                   <dd>{application.contact_number || "Not provided"}</dd>
+                </div>
+                <div>
+                  <dt>Zone</dt>
+                  <dd>{application.zone || "Not provided"}</dd>
                 </div>
                 <div>
                   <dt>Applied</dt>

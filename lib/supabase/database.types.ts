@@ -1,4 +1,12 @@
 export type EducationLevel = "high_school" | "college";
+export type BarangayZone =
+  | "Zone 1"
+  | "Zone 2"
+  | "Zone 3"
+  | "Zone 4"
+  | "Zone 5"
+  | "Zone 6"
+  | "Zone 7";
 
 export type EducationalAssistanceApplication = {
   id: string;
@@ -6,6 +14,7 @@ export type EducationalAssistanceApplication = {
   applicant_name: string;
   applicant_email: string;
   contact_number: string | null;
+  zone: BarangayZone | null;
   education_level: EducationLevel;
   school_name: string;
   year_or_grade_level: string;
@@ -284,6 +293,7 @@ export type Database = {
           applicant_name: string;
           applicant_email: string;
           contact_number: string | null;
+          zone: BarangayZone | null;
           education_level: EducationLevel;
           school_name: string;
           year_or_grade_level: string;

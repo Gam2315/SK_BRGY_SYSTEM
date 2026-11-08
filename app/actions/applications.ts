@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
 import { createClient } from "@/lib/supabase/server";
 import { isValidPhilippinePhoneNumber } from "@/lib/philippine-phone";
-import type { EducationLevel } from "@/lib/supabase/database.types";
+import type { BarangayZone, EducationLevel } from "@/lib/supabase/database.types";
 
 const APPLICATION_DOCUMENT_BUCKET = "application-documents";
 const MAX_APPLICATION_FILE_SIZE = 5 * 1024 * 1024;
@@ -37,6 +37,10 @@ function getOptionalField(formData: FormData, name: string) {
 
 function isEducationLevel(value: string): value is EducationLevel {
   return value === "high_school" || value === "college";
+}
+
+function isBarangayZone(value: string): value is BarangayZone {
+  return /^Zone [1-7]$/.test(value);
 }
 
 function getRequiredFile(formData: FormData, name: string) {
@@ -138,6 +142,7 @@ export async function submitEducationalAssistanceApplication(
 ): Promise<ApplicationFormState> {
   const applicantName = getRequiredField(formData, "applicant_name");
   const contactNumber = getOptionalField(formData, "contact_number");
+  const zone = getRequiredField(formData, "zone");
   const educationLevel = getRequiredField(formData, "education_level");
   const schoolName = getRequiredField(formData, "school_name");
   const yearOrGradeLevel = getRequiredField(formData, "year_or_grade_level");
@@ -151,6 +156,10 @@ export async function submitEducationalAssistanceApplication(
 
   if (!isEducationLevel(educationLevel)) {
     return { error: "Select high school or college as your education level." };
+  }
+
+  if (!isBarangayZone(zone)) {
+    return { error: "Select a valid zone (Zone 1 through Zone 7)." };
   }
 
   if ("error" in schoolAssessment) {
@@ -241,6 +250,7 @@ export async function submitEducationalAssistanceApplication(
       applicant_name: applicantName,
       applicant_email: applicant.user.email,
       contact_number: contactNumber,
+      zone,
       education_level: educationLevel,
       school_name: schoolName,
       year_or_grade_level: yearOrGradeLevel,

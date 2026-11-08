@@ -29,6 +29,7 @@ create table if not exists public.educational_assistance_applications (
   applicant_name text not null,
   applicant_email text not null,
   contact_number text,
+  zone text check (zone in ('Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5', 'Zone 6', 'Zone 7')),
   education_level text not null
     check (education_level in ('high_school', 'college')),
   school_name text not null,
@@ -105,6 +106,10 @@ create trigger require_educational_assistance_open
 
 alter table public.educational_assistance_applications
   add column if not exists user_id uuid references auth.users (id) on delete set null;
+
+alter table public.educational_assistance_applications
+  add column if not exists zone text
+    check (zone in ('Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5', 'Zone 6', 'Zone 7'));
 
 create index if not exists educational_assistance_applications_user_id_idx
   on public.educational_assistance_applications (user_id);
@@ -217,6 +222,7 @@ returns table (
   applicant_name text,
   applicant_email text,
   contact_number text,
+  zone text,
   education_level text,
   school_name text,
   year_or_grade_level text,
@@ -247,6 +253,7 @@ begin
     application.applicant_name,
     application.applicant_email,
     application.contact_number,
+    application.zone,
     application.education_level,
     application.school_name,
     application.year_or_grade_level,

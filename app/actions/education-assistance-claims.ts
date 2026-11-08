@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
 import { isPortalAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
+import type { BarangayZone } from "@/lib/supabase/database.types";
 
 const claimTokenPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -13,6 +14,7 @@ export type EducationClaimApplicant = {
   applicant_name: string;
   applicant_email: string;
   contact_number: string | null;
+  zone: BarangayZone | null;
   education_level: "high_school" | "college";
   school_name: string;
   year_or_grade_level: string;
@@ -51,7 +53,7 @@ export async function lookupEducationClaim(
   const { data: application, error } = await supabase
     .from("educational_assistance_applications")
     .select(
-      "id, applicant_name, applicant_email, contact_number, education_level, school_name, year_or_grade_level, status, claimed_at",
+      "id, applicant_name, applicant_email, contact_number, zone, education_level, school_name, year_or_grade_level, status, claimed_at",
     )
     .eq("claim_token", token)
     .maybeSingle();
@@ -73,6 +75,7 @@ export async function lookupEducationClaim(
       applicant_name: application.applicant_name,
       applicant_email: application.applicant_email,
       contact_number: application.contact_number,
+      zone: application.zone,
       education_level: application.education_level,
       school_name: application.school_name,
       year_or_grade_level: application.year_or_grade_level,
