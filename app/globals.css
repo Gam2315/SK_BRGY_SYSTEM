@@ -2814,6 +2814,92 @@ textarea:focus-visible {
   border-radius: 9px;
 }
 
+.education-archive-manager {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(280px, 1.2fr);
+  align-items: center;
+  gap: 12px 20px;
+  margin-bottom: 12px;
+  padding: 15px 18px;
+  background: #fff;
+  border: 1px solid #e2e6ea;
+  border-radius: 9px;
+}
+
+.education-archive-manager-current,
+.education-archive-manager-form {
+  display: grid;
+  align-items: center;
+  gap: 7px;
+}
+
+.education-archive-manager-current label,
+.education-archive-manager-form label {
+  color: #78847e;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.education-archive-manager-current select,
+.education-archive-manager-form input {
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  color: #35453c;
+  background: #fff;
+  border: 1px solid #d9e0db;
+  border-radius: 5px;
+  font: inherit;
+  font-size: 11px;
+}
+
+.education-archive-manager-form {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.education-archive-manager-form label {
+  grid-column: 1 / -1;
+}
+
+.education-archive-manager-form button {
+  min-height: 36px;
+  padding: 0 12px;
+  color: #fff;
+  background: #8d4240;
+  border: 0;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.education-archive-manager-form button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.education-archive-manager-note,
+.education-archive-manager-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.education-archive-manager-note {
+  color: #59685f;
+}
+
+.education-archive-manager-message.error {
+  color: #8d4240;
+}
+
+.education-archive-manager-message.success {
+  color: #286744;
+}
+
 .education-application-settings-status {
   display: flex;
   flex-wrap: wrap;
@@ -5114,6 +5200,10 @@ textarea:focus-visible {
   .auth-form-side {
     padding-right: 25px;
     padding-left: 25px;
+  }
+
+  .education-archive-manager {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .dashboard-sidebar {

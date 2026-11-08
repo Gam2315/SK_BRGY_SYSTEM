@@ -133,6 +133,7 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
     { data: applications, error: applicationsError },
     { data: jobseekerApplications, error: jobseekerApplicationsError },
     { data: educationSettings, error: educationSettingsError },
+    { data: educationArchiveBatches, error: educationArchiveBatchesError },
     { data: announcements, error: announcementsError },
     { data: communityPosts, error: communityPostsError },
     { data: activityLogs, error: activityLogsError },
@@ -140,7 +141,7 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
     supabase
       .from("educational_assistance_applications")
       .select(
-        "id, user_id, applicant_name, applicant_email, contact_number, zone, education_level, school_name, year_or_grade_level, school_assessment_path, school_id_front_path, school_id_back_path, status, review_notes, reviewed_at, reviewed_by, claimed_at, submitted_at",
+        "id, user_id, applicant_name, applicant_email, contact_number, zone, education_level, school_name, year_or_grade_level, school_assessment_path, school_id_front_path, school_id_back_path, status, review_notes, reviewed_at, reviewed_by, archive_batch_id, claimed_at, submitted_at",
       )
       .order("submitted_at", { ascending: false }),
     supabase
@@ -154,6 +155,10 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
       .select("is_open")
       .eq("id", true)
       .single(),
+    supabase
+      .from("education_assistance_archive_batches")
+      .select("id, name, archived_at, archived_by")
+      .order("archived_at", { ascending: false }),
     supabase
       .from("announcements")
       .select(
@@ -218,6 +223,8 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
       educationApplicationsError={applicationsError?.message}
       educationApplicationsOpen={educationSettings?.is_open}
       educationApplicationsSettingsError={educationSettingsError?.message}
+      educationArchiveBatches={educationArchiveBatches ?? []}
+      educationArchiveBatchesError={educationArchiveBatchesError?.message}
       jobseekerApplications={jobseekerApplicationsWithDocuments}
       jobseekerApplicationsError={jobseekerApplicationsError?.message}
       announcements={announcements ?? []}

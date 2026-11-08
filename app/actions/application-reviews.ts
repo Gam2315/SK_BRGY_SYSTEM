@@ -55,7 +55,7 @@ export async function updateApplicationReview(
     const { data: currentApplication, error: currentApplicationError } =
       await supabase
         .from("educational_assistance_applications")
-        .select("status")
+        .select("status, archive_batch_id")
         .eq("id", applicationId)
         .maybeSingle();
 
@@ -72,6 +72,12 @@ export async function updateApplicationReview(
     if (currentApplication?.status === "Claimed") {
       return {
         error: "A claimed educational assistance application cannot be reviewed again.",
+      };
+    }
+
+    if (currentApplication?.archive_batch_id) {
+      return {
+        error: "Archived educational assistance applications are read-only.",
       };
     }
   }

@@ -133,9 +133,10 @@ high school and college lists. To create or update the tables and their
 row-level security policies, run
 `supabase/educational-assistance.sql` in the Supabase SQL Editor. This script
 can be rerun safely to add applicant ownership and resident submission
-permissions, private document storage bucket, storage policies, and admin
-review permissions to an existing setup. Run the latest version before using
-the application review controls. Add each administrator account to
+permissions, private document storage bucket, storage policies, admin review
+permissions, and educational assistance archive-cycle support to an existing
+setup. Run the latest version before using the application review or archive
+controls. Add each administrator account to
 `public.portal_admins` using the setup query above so they can read applications
 and private documents.
 
@@ -152,6 +153,14 @@ check confirms only that required information and document uploads are
 present; administrators must review document contents and make the final
 eligibility decision. Educational assistance requires a school assessment and
 front/back school ID; jobseeker applications require front/back of a valid ID.
+
+To start a new educational assistance program cycle, open
+`/admin/education-applicants`, enter a label for the past program (for example,
+`AY 2025-2026`), and choose **Archive list**. This archives the current
+applications without deleting them and closes new submissions during the
+transition. Reopen applications when the new program is ready. Use the
+application-list selector to view or export a past cycle; archived applications
+cannot be reviewed again, but existing approved claim QR codes remain valid.
 
 All optional contact-number fields accept Philippine numbers beginning with
 `+63` (for example, `+63 917 123 4567`); numbers can include spaces, hyphens,

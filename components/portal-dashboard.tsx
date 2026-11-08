@@ -10,6 +10,7 @@ import AdminBarangayOfficialsManager from "@/components/admin-barangay-officials
 import AdminCommunityPostsManager from "@/components/admin-community-posts-manager";
 import AdminApplicationReviewControls from "@/components/admin-application-review-controls";
 import AdminEducationClaimScanner from "@/components/admin-education-claim-scanner";
+import AdminEducationArchiveManager from "@/components/admin-education-archive-manager";
 import AdminEducationApplicationSettings from "@/components/admin-education-application-settings";
 import ResidentApplicationForms from "@/components/resident-application-forms";
 import ResidentAnnouncementSubscription from "@/components/resident-announcement-subscription";
@@ -20,6 +21,7 @@ import type {
   CommunityPostWithImages,
   ApplicationDocumentLink,
   ConcernReport,
+  EducationAssistanceArchiveBatch,
   EducationalAssistanceApplication,
   JobseekerApplication,
 } from "@/lib/supabase/database.types";
@@ -52,6 +54,8 @@ type PortalDashboardProps = {
   educationApplicationsError?: string;
   educationApplicationsOpen?: boolean;
   educationApplicationsSettingsError?: string;
+  educationArchiveBatches?: EducationAssistanceArchiveBatch[];
+  educationArchiveBatchesError?: string;
   jobseekerApplications?: JobseekerApplicationWithDocuments[];
   jobseekerApplicationsError?: string;
   residentEducationApplications?: EducationalAssistanceApplication[];
@@ -94,6 +98,8 @@ export default function PortalDashboard({
   educationApplicationsError,
   educationApplicationsOpen = false,
   educationApplicationsSettingsError,
+  educationArchiveBatches = [],
+  educationArchiveBatchesError,
   jobseekerApplications = [],
   jobseekerApplicationsError,
   residentEducationApplications = [],
@@ -119,6 +125,9 @@ export default function PortalDashboard({
   const [activeSection, setActiveSection] = useState("overview");
   const [selectedDocument, setSelectedDocument] =
     useState<ApplicationDocumentLink | null>(null);
+  const [selectedEducationArchiveId, setSelectedEducationArchiveId] = useState<
+    string | null
+  >(null);
   const documentPreviewRef = useRef<HTMLDialogElement>(null);
   const selectedSection =
     isAdmin && adminPage !== "overview" ? adminPage : activeSection;
@@ -395,6 +404,10 @@ export default function PortalDashboard({
                 educationApplicationsSettingsError={
                   educationApplicationsSettingsError
                 }
+                educationArchiveBatches={educationArchiveBatches}
+                educationArchiveBatchesError={educationArchiveBatchesError}
+                selectedEducationArchiveId={selectedEducationArchiveId}
+                onSelectEducationArchive={setSelectedEducationArchiveId}
                 jobseekerApplications={jobseekerApplications}
                 jobseekerApplicationsError={jobseekerApplicationsError}
                 announcements={announcements}
@@ -509,6 +522,10 @@ function AdminOverview({
   applicationsError,
   educationApplicationsOpen,
   educationApplicationsSettingsError,
+  educationArchiveBatches,
+  educationArchiveBatchesError,
+  selectedEducationArchiveId,
+  onSelectEducationArchive,
   jobseekerApplications,
   jobseekerApplicationsError,
   announcements,
@@ -528,6 +545,10 @@ function AdminOverview({
   applicationsError?: string;
   educationApplicationsOpen: boolean;
   educationApplicationsSettingsError?: string;
+  educationArchiveBatches: EducationAssistanceArchiveBatch[];
+  educationArchiveBatchesError?: string;
+  selectedEducationArchiveId: string | null;
+  onSelectEducationArchive: (archiveId: string | null) => void;
   jobseekerApplications: JobseekerApplicationWithDocuments[];
   jobseekerApplicationsError?: string;
   announcements: Announcement[];
@@ -542,11 +563,19 @@ function AdminOverview({
   concernReportsError?: string;
   onPreviewDocument: (document: ApplicationDocumentLink) => void;
 }) {
-  const highSchoolApplications = applications.filter(
+  const listedEducationApplications = applications.filter((application) =>
+    selectedEducationArchiveId
+      ? application.archive_batch_id === selectedEducationArchiveId
+      : application.archive_batch_id === null,
+  );
+  const highSchoolApplications = listedEducationApplications.filter(
     (application) => application.education_level === "high_school",
   );
-  const collegeApplications = applications.filter(
+  const collegeApplications = listedEducationApplications.filter(
     (application) => application.education_level === "college",
+  );
+  const selectedEducationArchive = educationArchiveBatches.find(
+    (archive) => archive.id === selectedEducationArchiveId,
   );
 
   return (
@@ -754,18 +783,31 @@ function AdminOverview({
         className="admin-applications-section"
         id="educational-assistance"
       >
-        <AdminEducationApplicationSettings
-          isOpen={educationApplicationsOpen}
-          error={educationApplicationsSettingsError}
+        <AdminEducationArchiveManager
+          activeApplicationCount={applications.filter(
+            (application) => application.archive_batch_id === null,
+          ).length}
+          archiveBatches={educationArchiveBatches}
+          archiveBatchesError={educationArchiveBatchesError}
+          onSelectArchive={onSelectEducationArchive}
+          selectedArchiveId={selectedEducationArchiveId}
         />
+        {!selectedEducationArchiveId && (
+          <AdminEducationApplicationSettings
+            isOpen={educationApplicationsOpen}
+            error={educationApplicationsSettingsError}
+          />
+        )}
         <div className="dashboard-section-title">
           <div>
             <span className="section-kicker">EDUCATIONAL ASSISTANCE</span>
             <h2>Applicant lists</h2>
           </div>
           <span className="dashboard-section-note">
-            {applications.length}{" "}
-            {applications.length === 1 ? "application" : "applications"}
+            {listedEducationApplications.length}{" "}
+            {listedEducationApplications.length === 1
+              ? "application"
+              : "applications"}
           </span>
         </div>
 
@@ -778,12 +820,16 @@ function AdminOverview({
           <div className="admin-applications-grid">
             <ApplicationList
               applications={highSchoolApplications}
+              archiveName={selectedEducationArchive?.name ?? "Current program"}
               educationLevel="High school"
+              isArchived={Boolean(selectedEducationArchiveId)}
               onPreviewDocument={onPreviewDocument}
             />
             <ApplicationList
               applications={collegeApplications}
+              archiveName={selectedEducationArchive?.name ?? "Current program"}
               educationLevel="College"
+              isArchived={Boolean(selectedEducationArchiveId)}
               onPreviewDocument={onPreviewDocument}
             />
           </div>
@@ -1016,11 +1062,15 @@ function AdminOverview({
 
 function ApplicationList({
   applications,
+  archiveName,
   educationLevel,
+  isArchived,
   onPreviewDocument,
 }: {
   applications: EducationApplicationWithDocuments[];
+  archiveName: string;
   educationLevel: string;
+  isArchived: boolean;
   onPreviewDocument: (document: ApplicationDocumentLink) => void;
 }) {
   const [currentPage, setCurrentPage] = useState(1);
@@ -1044,8 +1094,9 @@ function ApplicationList({
             disabled={applications.length === 0}
             onClick={() =>
               void downloadExcel(
-                `educational-assistance-${educationLevel.toLowerCase().replaceAll(" ", "-")}-applicants.xlsx`,
+                `educational-assistance-${archiveName.toLowerCase().replace(/[^a-z0-9]+/g, "-")}-${educationLevel.toLowerCase().replaceAll(" ", "-")}-applicants.xlsx`,
                 [
+                  "Program cycle",
                   "Applicant",
                   "Email",
                   "Contact",
@@ -1060,6 +1111,7 @@ function ApplicationList({
                   "Claimed at (Manila)",
                 ],
                 applications.map((application) => [
+                  archiveName,
                   application.applicant_name,
                   application.applicant_email,
                   application.contact_number,
@@ -1073,7 +1125,7 @@ function ApplicationList({
                   application.reviewed_at,
                   application.claimed_at,
                 ]),
-                [8, 9, 10],
+                [9, 10, 11],
               )
             }
             type="button"
@@ -1165,6 +1217,10 @@ function ApplicationList({
                       dateStyle: "medium",
                       timeZone: "Asia/Manila",
                     }).format(new Date(application.claimed_at))}`}
+                </p>
+              ) : isArchived ? (
+                <p className="admin-application-claimed">
+                  Archived application · review is disabled
                 </p>
               ) : (
                 <AdminApplicationReviewControls

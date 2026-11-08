@@ -25,20 +25,18 @@ export type EducationalAssistanceApplication = {
   review_notes: string | null;
   reviewed_at: string | null;
   reviewed_by: string | null;
-  claim_period_id?: string | null;
+  archive_batch_id: string | null;
   claim_token?: string | null;
   claimed_at?: string | null;
   claimed_by?: string | null;
   submitted_at: string;
 };
 
-export type EducationClaimPeriod = {
+export type EducationAssistanceArchiveBatch = {
   id: string;
   name: string;
-  claim_date: string;
-  instructions: string | null;
-  created_by: string;
-  created_at: string;
+  archived_at: string;
+  archived_by: string;
 };
 
 export type EducationAssistanceSettings = {
@@ -133,14 +131,14 @@ export type BarangayOfficial = {
 type EducationalAssistanceApplicationInsert = Omit<
   EducationalAssistanceApplication,
   "id" | "submitted_at" | "review_notes" | "reviewed_at" | "reviewed_by"
-    | "claim_period_id" | "claim_token" | "claimed_at" | "claimed_by"
+    | "archive_batch_id" | "claim_token" | "claimed_at" | "claimed_by"
 > & {
   id?: string;
   submitted_at?: string;
   review_notes?: string | null;
   reviewed_at?: string | null;
   reviewed_by?: string | null;
-  claim_period_id?: string | null;
+  archive_batch_id?: string | null;
   claim_token?: string | null;
   claimed_at?: string | null;
   claimed_by?: string | null;
@@ -166,11 +164,11 @@ export type Database = {
         Update: Partial<EducationalAssistanceApplicationInsert>;
         Relationships: [];
       };
-      education_claim_periods: {
-        Row: EducationClaimPeriod;
-        Insert: Omit<EducationClaimPeriod, "id" | "created_at"> & {
+      education_assistance_archive_batches: {
+        Row: EducationAssistanceArchiveBatch;
+        Insert: Omit<EducationAssistanceArchiveBatch, "id" | "archived_at"> & {
           id?: string;
-          created_at?: string;
+          archived_at?: string;
         };
         Update: never;
         Relationships: [];
@@ -280,6 +278,17 @@ export type Database = {
     };
     Views: Record<string, never>;
     Functions: {
+      archive_education_assistance_applications: {
+        Args: {
+          p_name: string;
+        };
+        Returns: {
+          batch_id: string;
+          archive_name: string;
+          archived_at: string;
+          application_count: number;
+        }[];
+      };
       is_portal_admin: {
         Args: Record<string, never>;
         Returns: boolean;

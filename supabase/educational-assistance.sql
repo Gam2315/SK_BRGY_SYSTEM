@@ -38,6 +38,35 @@ create table if not exists public.educational_assistance_applications (
   submitted_at timestamptz not null default now()
 );
 
+create table if not exists public.education_assistance_archive_batches (
+  id uuid primary key default gen_random_uuid(),
+  name text not null check (char_length(btrim(name)) between 1 and 120),
+  archived_at timestamptz not null default now(),
+  archived_by uuid not null references auth.users (id) on delete restrict
+);
+
+create unique index if not exists education_assistance_archive_batches_name_key
+  on public.education_assistance_archive_batches (lower(name));
+
+alter table public.educational_assistance_applications
+  add column if not exists archive_batch_id uuid
+    references public.education_assistance_archive_batches (id) on delete restrict;
+
+alter table public.education_assistance_archive_batches enable row level security;
+revoke all on table public.education_assistance_archive_batches from anon, authenticated;
+grant select on table public.education_assistance_archive_batches to authenticated;
+
+drop policy if exists "Portal admins can read education assistance archive batches"
+  on public.education_assistance_archive_batches;
+create policy "Portal admins can read education assistance archive batches"
+  on public.education_assistance_archive_batches
+  for select
+  to authenticated
+  using ((select public.is_portal_admin()));
+
+create index if not exists educational_assistance_applications_archive_batch_idx
+  on public.educational_assistance_applications (archive_batch_id);
+
 create table if not exists public.educational_assistance_settings (
   id boolean primary key default true check (id),
   is_open boolean not null default true,
@@ -78,13 +107,16 @@ language plpgsql
 security definer
 set search_path = ''
 as $$
+declare
+  v_is_open boolean;
 begin
-  if not exists (
-    select 1
-    from public.educational_assistance_settings
-    where id = true
-      and is_open
-  ) then
+  select is_open
+  into v_is_open
+  from public.educational_assistance_settings
+  where id = true
+  for share;
+
+  if not coalesce(v_is_open, false) then
     raise exception using
       errcode = 'P0001',
       message = 'Educational assistance applications are currently closed.';
@@ -195,6 +227,7 @@ create policy "Authenticated applicants can submit educational assistance applic
     user_id = (select auth.uid())
     and lower(applicant_email) = lower((select auth.jwt() ->> 'email'))
     and status = 'Pending'
+    and archive_batch_id is null
     and school_assessment_path like ((select auth.uid())::text || '/%')
     and school_id_front_path like ((select auth.uid())::text || '/%')
     and school_id_back_path like ((select auth.uid())::text || '/%')
@@ -205,12 +238,90 @@ create policy "Portal admins can update educational assistance application revie
   on public.educational_assistance_applications
   for update
   to authenticated
-  using ((select public.is_portal_admin()))
+  using (
+    (select public.is_portal_admin())
+    and archive_batch_id is null
+  )
   with check (
     (select public.is_portal_admin())
+    and archive_batch_id is null
     and reviewed_by = (select auth.uid())
     and status in ('Pending', 'Approved', 'Rejected')
   );
+
+create or replace function public.archive_education_assistance_applications(
+  p_name text
+)
+returns table (
+  batch_id uuid,
+  archive_name text,
+  archived_at timestamptz,
+  application_count integer
+)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_batch_id uuid;
+  v_name text := btrim(p_name);
+  v_archived_at timestamptz;
+  v_application_count integer;
+begin
+  if not coalesce(public.is_portal_admin(), false) then
+    raise exception using
+      errcode = '42501',
+      message = 'Only portal administrators can archive educational assistance applications.';
+  end if;
+
+  if v_name is null or char_length(v_name) not between 1 and 120 then
+    raise exception using
+      errcode = '22023',
+      message = 'Enter an archive name between 1 and 120 characters.';
+  end if;
+
+  update public.educational_assistance_settings
+  set
+    is_open = false,
+    updated_at = now(),
+    updated_by = (select auth.uid())
+  where id = true;
+
+  if not found then
+    raise exception using
+      errcode = 'P0002',
+      message = 'Educational assistance settings are missing.';
+  end if;
+
+  insert into public.education_assistance_archive_batches (
+    name,
+    archived_by
+  )
+  values (v_name, (select auth.uid()))
+  returning id, education_assistance_archive_batches.archived_at
+  into v_batch_id, v_archived_at;
+
+  update public.educational_assistance_applications
+  set archive_batch_id = v_batch_id
+  where archive_batch_id is null;
+
+  get diagnostics v_application_count = row_count;
+
+  if v_application_count = 0 then
+    raise exception using
+      errcode = 'P0001',
+      message = 'There are no active educational assistance applications to archive.';
+  end if;
+
+  return query
+  select v_batch_id, v_name, v_archived_at, v_application_count;
+end;
+$$;
+
+revoke all on function public.archive_education_assistance_applications(text)
+  from public, anon;
+grant execute on function public.archive_education_assistance_applications(text)
+  to authenticated;
 
 drop function if exists public.record_education_assistance_claim(uuid);
 
