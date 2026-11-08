@@ -153,6 +153,13 @@ check confirms only that required information and document uploads are
 present; administrators must review document contents and make the final
 eligibility decision. Educational assistance requires a school assessment and
 front/back school ID; jobseeker applications require front/back of a valid ID.
+Educational assistance applications also require religion (with a
+specification when "Other" is selected), civil status, youth age group and
+classification, work status, educational attainment, and registered-voter
+status. Selecting "Highschool Graduate" limits education level to college.
+"College Graduate" and "Doctorate Graduate" hide education level and year or
+grade. Administrators can filter educational assistance applicant lists by
+zone.
 
 To start a new educational assistance program cycle, open
 `/admin/education-applicants`, enter a label for the past program (for example,

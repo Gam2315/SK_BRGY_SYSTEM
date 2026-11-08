@@ -178,7 +178,9 @@ export default function AdminEducationClaimScanner() {
                   <dd>
                     {application.education_level === "high_school"
                       ? "High school"
-                      : "College"}
+                      : application.education_level === "college"
+                        ? "College"
+                        : "Not applicable"}
                   </dd>
                 </div>
                 <div>
@@ -187,7 +189,7 @@ export default function AdminEducationClaimScanner() {
                 </div>
                 <div>
                   <dt>Year / grade</dt>
-                  <dd>{application.year_or_grade_level}</dd>
+                  <dd>{application.year_or_grade_level || "Not applicable"}</dd>
                 </div>
               </dl>
               <label className="education-claim-id-check">

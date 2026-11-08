@@ -563,16 +563,23 @@ function AdminOverview({
   concernReportsError?: string;
   onPreviewDocument: (document: ApplicationDocumentLink) => void;
 }) {
-  const listedEducationApplications = applications.filter((application) =>
+  const [selectedZone, setSelectedZone] = useState("all");
+  const archivedEducationApplications = applications.filter((application) =>
     selectedEducationArchiveId
       ? application.archive_batch_id === selectedEducationArchiveId
       : application.archive_batch_id === null,
+  );
+  const listedEducationApplications = archivedEducationApplications.filter(
+    (application) => selectedZone === "all" || application.zone === selectedZone,
   );
   const highSchoolApplications = listedEducationApplications.filter(
     (application) => application.education_level === "high_school",
   );
   const collegeApplications = listedEducationApplications.filter(
     (application) => application.education_level === "college",
+  );
+  const graduateApplications = listedEducationApplications.filter(
+    (application) => application.education_level === null,
   );
   const selectedEducationArchive = educationArchiveBatches.find(
     (archive) => archive.id === selectedEducationArchiveId,
@@ -803,12 +810,30 @@ function AdminOverview({
             <span className="section-kicker">EDUCATIONAL ASSISTANCE</span>
             <h2>Applicant lists</h2>
           </div>
-          <span className="dashboard-section-note">
-            {listedEducationApplications.length}{" "}
-            {listedEducationApplications.length === 1
-              ? "application"
-              : "applications"}
-          </span>
+          <div className="admin-applications-title-actions">
+            <label className="admin-application-zone-filter">
+              Filter by zone
+              <select
+                onChange={(event) => setSelectedZone(event.target.value)}
+                value={selectedZone}
+              >
+                <option value="all">All zones</option>
+                {Array.from({ length: 7 }, (_, index) => `Zone ${index + 1}`).map(
+                  (zone) => (
+                    <option key={zone} value={zone}>
+                      {zone}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+            <span className="dashboard-section-note">
+              {listedEducationApplications.length}{" "}
+              {listedEducationApplications.length === 1
+                ? "application"
+                : "applications"}
+            </span>
+          </div>
         </div>
 
         {applicationsError ? (
@@ -829,6 +854,13 @@ function AdminOverview({
               applications={collegeApplications}
               archiveName={selectedEducationArchive?.name ?? "Current program"}
               educationLevel="College"
+              isArchived={Boolean(selectedEducationArchiveId)}
+              onPreviewDocument={onPreviewDocument}
+            />
+            <ApplicationList
+              applications={graduateApplications}
+              archiveName={selectedEducationArchive?.name ?? "Current program"}
+              educationLevel="Graduate"
               isArchived={Boolean(selectedEducationArchiveId)}
               onPreviewDocument={onPreviewDocument}
             />
@@ -1101,6 +1133,13 @@ function ApplicationList({
                   "Email",
                   "Contact",
                   "Zone",
+                  "Religion",
+                  "Civil status",
+                  "Youth age group",
+                  "Youth classification",
+                  "Work status",
+                  "Educational attainment",
+                  "Registered voter",
                   "Education level",
                   "School",
                   "Year / grade level",
@@ -1116,16 +1155,27 @@ function ApplicationList({
                   application.applicant_email,
                   application.contact_number,
                   application.zone,
-                  educationLevel,
+                  application.religion === "Other" && application.religion_other
+                    ? `Other: ${application.religion_other}`
+                    : application.religion,
+                  application.civil_status,
+                  application.youth_age_group,
+                  application.youth_classification,
+                  application.work_status,
+                  application.educational_attainment,
+                  application.registered_voter,
+                  application.education_level === null
+                    ? "Not applicable"
+                    : educationLevel,
                   application.school_name,
-                  application.year_or_grade_level,
+                  application.year_or_grade_level ?? "Not applicable",
                   application.status,
                   application.review_notes,
                   application.submitted_at,
                   application.reviewed_at,
                   application.claimed_at,
                 ]),
-                [9, 10, 11],
+                [17, 18, 19],
               )
             }
             type="button"
@@ -1149,12 +1199,45 @@ function ApplicationList({
               </div>
               <dl className="admin-application-details">
                 <div>
+                  <dt>Religion</dt>
+                  <dd>
+                    {application.religion === "Other" &&
+                    application.religion_other
+                      ? `Other: ${application.religion_other}`
+                      : application.religion || "Not provided"}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Civil status</dt>
+                  <dd>{application.civil_status || "Not provided"}</dd>
+                </div>
+                <div>
+                  <dt>Youth age group</dt>
+                  <dd>{application.youth_age_group || "Not provided"}</dd>
+                </div>
+                <div>
+                  <dt>Youth classification</dt>
+                  <dd>{application.youth_classification || "Not provided"}</dd>
+                </div>
+                <div>
+                  <dt>Work status</dt>
+                  <dd>{application.work_status || "Not provided"}</dd>
+                </div>
+                <div>
+                  <dt>Educational attainment</dt>
+                  <dd>{application.educational_attainment || "Not provided"}</dd>
+                </div>
+                <div>
+                  <dt>Registered voter</dt>
+                  <dd>{application.registered_voter || "Not provided"}</dd>
+                </div>
+                <div>
                   <dt>School</dt>
                   <dd>{application.school_name}</dd>
                 </div>
                 <div>
                   <dt>Year / grade</dt>
-                  <dd>{application.year_or_grade_level}</dd>
+                  <dd>{application.year_or_grade_level || "Not applicable"}</dd>
                 </div>
                 <div>
                   <dt>Contact</dt>
@@ -1231,7 +1314,9 @@ function ApplicationList({
                   missingRequirements={[
                     !application.applicant_name.trim() && "Applicant name",
                     !application.school_name.trim() && "School name",
-                    !application.year_or_grade_level.trim() && "Year / grade",
+                    application.education_level !== null &&
+                      !application.year_or_grade_level?.trim() &&
+                      "Year / grade",
                     !application.school_assessment_path && "School assessment",
                     !application.school_id_front_path && "School ID front",
                     !application.school_id_back_path && "School ID back",
@@ -1443,7 +1528,9 @@ function ResidentOverview({
       category:
         application.education_level === "high_school"
           ? "High school educational assistance"
-          : "College educational assistance",
+          : application.education_level === "college"
+            ? "College educational assistance"
+            : "Graduate educational assistance",
       status: application.status,
       reviewNotes: application.review_notes,
       submittedAt: application.submitted_at,

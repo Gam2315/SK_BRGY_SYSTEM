@@ -141,7 +141,7 @@ async function AdminDashboard({ page }: { page: AdminDashboardSection }) {
     supabase
       .from("educational_assistance_applications")
       .select(
-        "id, user_id, applicant_name, applicant_email, contact_number, zone, education_level, school_name, year_or_grade_level, school_assessment_path, school_id_front_path, school_id_back_path, status, review_notes, reviewed_at, reviewed_by, archive_batch_id, claimed_at, submitted_at",
+        "id, user_id, applicant_name, applicant_email, contact_number, zone, religion, religion_other, civil_status, youth_age_group, youth_classification, work_status, educational_attainment, registered_voter, education_level, school_name, year_or_grade_level, school_assessment_path, school_id_front_path, school_id_back_path, status, review_notes, reviewed_at, reviewed_by, archive_batch_id, claimed_at, submitted_at",
       )
       .order("submitted_at", { ascending: false }),
     supabase

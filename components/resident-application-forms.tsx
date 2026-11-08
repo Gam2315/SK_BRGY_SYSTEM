@@ -6,6 +6,15 @@ import {
   submitJobseekerApplication,
   type ApplicationFormState,
 } from "@/app/actions/applications";
+import {
+  civilStatusOptions,
+  educationalAttainmentOptions,
+  registeredVoterOptions,
+  religionOptions,
+  workStatusOptions,
+  youthAgeGroupOptions,
+  youthClassificationOptions,
+} from "@/lib/education-application-options";
 
 const initialState: ApplicationFormState = {};
 const acceptedDocumentTypes = ".jpg,.jpeg,.png,.webp,.pdf";
@@ -43,6 +52,11 @@ export default function ResidentApplicationForms({
 }) {
   const [educationLevel, setEducationLevel] = useState("");
   const [yearOrGradeLevel, setYearOrGradeLevel] = useState("");
+  const [religion, setReligion] = useState("");
+  const [educationalAttainment, setEducationalAttainment] = useState("");
+  const isGraduate =
+    educationalAttainment === "College Graduate" ||
+    educationalAttainment === "Doctorate Graduate";
   const [educationState, educationAction, educationPending] = useActionState(
     submitEducationalAssistanceApplication,
     initialState,
@@ -129,59 +143,190 @@ export default function ResidentApplicationForms({
                 </select>
               </label>
               <label>
-                Education level
+                Religion
                 <select
-                  name="education_level"
+                  name="religion"
                   required
-                  value={educationLevel}
+                  value={religion}
+                  onChange={(event) => setReligion(event.target.value)}
+                >
+                  <option disabled value="">
+                    Select your religion
+                  </option>
+                  {religionOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {religion === "Other" && (
+                <label>
+                  Specify your religion
+                  <input
+                    autoComplete="off"
+                    maxLength={100}
+                    name="religion_other"
+                    required
+                  />
+                </label>
+              )}
+              <label>
+                Civil status
+                <select name="civil_status" required>
+                  <option disabled value="">
+                    Select your civil status
+                  </option>
+                  {civilStatusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Youth age group
+                <select name="youth_age_group" required>
+                  <option disabled value="">
+                    Select your age group
+                  </option>
+                  {youthAgeGroupOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Youth classification
+                <select name="youth_classification" required>
+                  <option disabled value="">
+                    Select your youth classification
+                  </option>
+                  {youthClassificationOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Work status
+                <select name="work_status" required>
+                  <option disabled value="">
+                    Select your work status
+                  </option>
+                  {workStatusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Educational attainment
+                <select
+                  name="educational_attainment"
+                  required
+                  value={educationalAttainment}
                   onChange={(event) => {
-                    setEducationLevel(event.target.value);
-                    setYearOrGradeLevel("");
+                    const attainment = event.target.value;
+                    setEducationalAttainment(attainment);
+                    if (
+                      attainment === "Highschool Graduate" ||
+                      attainment === "College Graduate" ||
+                      attainment === "Doctorate Graduate"
+                    ) {
+                      setEducationLevel("");
+                      setYearOrGradeLevel("");
+                    }
                   }}
                 >
                   <option disabled value="">
-                    Select your level
+                    Select your educational attainment
                   </option>
-                  <option value="high_school">High school</option>
-                  <option value="college">College</option>
+                  {educationalAttainmentOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
                 </select>
               </label>
+              <label>
+                Registered voter
+                <select name="registered_voter" required>
+                  <option disabled value="">
+                    Select an option
+                  </option>
+                  {registeredVoterOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {!isGraduate && (
+                <label>
+                  Education level
+                  <select
+                    name="education_level"
+                    required
+                    value={educationLevel}
+                    onChange={(event) => {
+                      setEducationLevel(event.target.value);
+                      setYearOrGradeLevel("");
+                    }}
+                  >
+                    <option disabled value="">
+                      Select your level
+                    </option>
+                    {educationalAttainment !== "Highschool Graduate" && (
+                      <option value="high_school">High school</option>
+                    )}
+                    <option value="college">College</option>
+                  </select>
+                </label>
+              )}
               <label>
                 School name
                 <input maxLength={200} name="school_name" required />
               </label>
-              <label>
-                Year or grade level
-                <select
-                  disabled={!educationLevel}
-                  name="year_or_grade_level"
-                  required
-                  value={yearOrGradeLevel}
-                  onChange={(event) => setYearOrGradeLevel(event.target.value)}
-                >
-                  <option disabled value="">
-                    {educationLevel
-                      ? "Select your year or grade"
-                      : "Select your education level first"}
-                  </option>
-                  {educationLevel === "high_school" &&
-                    Array.from({ length: 6 }, (_, index) => index + 7).map(
-                      (grade) => (
-                        <option key={grade} value={`Grade ${grade}`}>
-                          Grade {grade}
-                        </option>
-                      ),
-                    )}
-                  {educationLevel === "college" &&
-                    ["First", "Second", "Third", "Fourth", "Fifth"].map(
-                      (year) => (
-                        <option key={year} value={`${year} year`}>
-                          {year} year
-                        </option>
-                      ),
-                    )}
-                </select>
-              </label>
+              {!isGraduate && (
+                <label>
+                  Year or grade level
+                  <select
+                    disabled={!educationLevel}
+                    name="year_or_grade_level"
+                    required
+                    value={yearOrGradeLevel}
+                    onChange={(event) =>
+                      setYearOrGradeLevel(event.target.value)
+                    }
+                  >
+                    <option disabled value="">
+                      {educationLevel
+                        ? "Select your year or grade"
+                        : "Select your education level first"}
+                    </option>
+                    {educationLevel === "high_school" &&
+                      Array.from({ length: 6 }, (_, index) => index + 7).map(
+                        (grade) => (
+                          <option key={grade} value={`Grade ${grade}`}>
+                            Grade {grade}
+                          </option>
+                        ),
+                      )}
+                    {educationLevel === "college" &&
+                      ["First", "Second", "Third", "Fourth", "Fifth"].map(
+                        (year) => (
+                          <option key={year} value={`${year} year`}>
+                            {year} year
+                          </option>
+                        ),
+                      )}
+                  </select>
+                </label>
+              )}
               <div className="application-document-group">
                 <span className="application-document-heading">
                   Required documents

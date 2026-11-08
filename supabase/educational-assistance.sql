@@ -30,6 +30,28 @@ create table if not exists public.educational_assistance_applications (
   applicant_email text not null,
   contact_number text,
   zone text check (zone in ('Zone 1', 'Zone 2', 'Zone 3', 'Zone 4', 'Zone 5', 'Zone 6', 'Zone 7')),
+  religion text check (religion in ('Roman Catholic', 'INC', 'Methodist', 'Born Again', 'Other')),
+  religion_other text check (
+    religion_other is null or char_length(btrim(religion_other)) between 1 and 100
+  ),
+  civil_status text check (civil_status in ('Single', 'Married')),
+  youth_age_group text check (
+    youth_age_group in ('Child Youth (15–17 yrs)', 'Core Youth (18–24 yrs)', 'Young Adult (25–30 yrs)')
+  ),
+  youth_classification text check (
+    youth_classification in ('In-School Youth', 'Working Youth', 'Out-of-School Youth (OSY)')
+  ),
+  work_status text check (work_status in ('Employed', 'Self-Employed', 'Unemployed')),
+  educational_attainment text check (
+    educational_attainment in (
+      'Elementary Graduate',
+      'Highschool Graduate',
+      'SHS Graduate',
+      'College Graduate',
+      'Doctorate Graduate'
+    )
+  ),
+  registered_voter text check (registered_voter in ('Yes', 'No')),
   education_level text not null
     check (education_level in ('high_school', 'college')),
   school_name text not null,
@@ -156,6 +178,70 @@ alter table public.educational_assistance_applications
   add column if not exists claim_token uuid,
   add column if not exists claimed_at timestamptz,
   add column if not exists claimed_by uuid references auth.users (id) on delete set null;
+
+alter table public.educational_assistance_applications
+  add column if not exists religion text
+    check (religion in ('Roman Catholic', 'INC', 'Methodist', 'Born Again', 'Other')),
+  add column if not exists religion_other text
+    check (religion_other is null or char_length(btrim(religion_other)) between 1 and 100),
+  add column if not exists civil_status text
+    check (civil_status in ('Single', 'Married')),
+  add column if not exists youth_age_group text
+    check (youth_age_group in ('Child Youth (15–17 yrs)', 'Core Youth (18–24 yrs)', 'Young Adult (25–30 yrs)')),
+  add column if not exists youth_classification text
+    check (youth_classification in ('In-School Youth', 'Working Youth', 'Out-of-School Youth (OSY)')),
+  add column if not exists work_status text
+    check (work_status in ('Employed', 'Self-Employed', 'Unemployed')),
+  add column if not exists educational_attainment text
+    check (educational_attainment in (
+      'Elementary Graduate',
+      'Highschool Graduate',
+      'SHS Graduate',
+      'College Graduate',
+      'Doctorate Graduate'
+    )),
+  add column if not exists registered_voter text
+    check (registered_voter in ('Yes', 'No'));
+
+alter table public.educational_assistance_applications
+  alter column education_level drop not null,
+  alter column year_or_grade_level drop not null;
+
+alter table public.educational_assistance_applications
+  drop constraint if exists educational_assistance_attainment_level_check;
+alter table public.educational_assistance_applications
+  add constraint educational_assistance_attainment_level_check
+  check (
+    educational_attainment is null
+    or (
+      educational_attainment in ('College Graduate', 'Doctorate Graduate')
+      and education_level is null
+      and year_or_grade_level is null
+    )
+    or (
+      educational_attainment = 'Highschool Graduate'
+      and education_level = 'college'
+      and year_or_grade_level is not null
+    )
+    or (
+      educational_attainment not in (
+        'College Graduate',
+        'Doctorate Graduate',
+        'Highschool Graduate'
+      )
+      and education_level is not null
+      and year_or_grade_level is not null
+    )
+  ) not valid;
+
+alter table public.educational_assistance_applications
+  drop constraint if exists educational_assistance_religion_other_check;
+alter table public.educational_assistance_applications
+  add constraint educational_assistance_religion_other_check
+  check (
+    (religion = 'Other' and nullif(btrim(religion_other), '') is not null)
+    or (religion is distinct from 'Other' and religion_other is null)
+  );
 
 update public.educational_assistance_applications
 set claim_token = gen_random_uuid()

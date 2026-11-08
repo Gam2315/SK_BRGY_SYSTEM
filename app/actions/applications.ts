@@ -4,7 +4,19 @@ import { revalidatePath } from "next/cache";
 import { recordActivity } from "@/lib/supabase/activity-logs";
 import { createClient } from "@/lib/supabase/server";
 import { isValidPhilippinePhoneNumber } from "@/lib/philippine-phone";
-import type { BarangayZone, EducationLevel } from "@/lib/supabase/database.types";
+import {
+  civilStatusOptions,
+  educationalAttainmentOptions,
+  registeredVoterOptions,
+  religionOptions,
+  workStatusOptions,
+  youthAgeGroupOptions,
+  youthClassificationOptions,
+} from "@/lib/education-application-options";
+import type {
+  BarangayZone,
+  EducationLevel,
+} from "@/lib/supabase/database.types";
 
 const APPLICATION_DOCUMENT_BUCKET = "application-documents";
 const MAX_APPLICATION_FILE_SIZE = 5 * 1024 * 1024;
@@ -41,6 +53,13 @@ function isEducationLevel(value: string): value is EducationLevel {
 
 function isBarangayZone(value: string): value is BarangayZone {
   return /^Zone [1-7]$/.test(value);
+}
+
+function isOption<T extends readonly string[]>(
+  value: string,
+  options: T,
+): value is T[number] {
+  return options.some((option) => option === value);
 }
 
 function getRequiredFile(formData: FormData, name: string) {
@@ -143,6 +162,20 @@ export async function submitEducationalAssistanceApplication(
   const applicantName = getRequiredField(formData, "applicant_name");
   const contactNumber = getOptionalField(formData, "contact_number");
   const zone = getRequiredField(formData, "zone");
+  const religion = getRequiredField(formData, "religion");
+  const religionOther = getOptionalField(formData, "religion_other");
+  const civilStatus = getRequiredField(formData, "civil_status");
+  const youthAgeGroup = getRequiredField(formData, "youth_age_group");
+  const youthClassification = getRequiredField(
+    formData,
+    "youth_classification",
+  );
+  const workStatus = getRequiredField(formData, "work_status");
+  const educationalAttainment = getRequiredField(
+    formData,
+    "educational_attainment",
+  );
+  const registeredVoter = getRequiredField(formData, "registered_voter");
   const educationLevel = getRequiredField(formData, "education_level");
   const schoolName = getRequiredField(formData, "school_name");
   const yearOrGradeLevel = getRequiredField(formData, "year_or_grade_level");
@@ -150,16 +183,66 @@ export async function submitEducationalAssistanceApplication(
   const schoolIdFront = getRequiredFile(formData, "school_id_front");
   const schoolIdBack = getRequiredFile(formData, "school_id_back");
 
-  if (!applicantName || !schoolName || !yearOrGradeLevel) {
+  if (!applicantName || !schoolName) {
     return { error: "Complete all required fields before submitting." };
-  }
-
-  if (!isEducationLevel(educationLevel)) {
-    return { error: "Select high school or college as your education level." };
   }
 
   if (!isBarangayZone(zone)) {
     return { error: "Select a valid zone (Zone 1 through Zone 7)." };
+  }
+
+  if (
+    !isOption(religion, religionOptions) ||
+    !isOption(civilStatus, civilStatusOptions) ||
+    !isOption(youthAgeGroup, youthAgeGroupOptions) ||
+    !isOption(youthClassification, youthClassificationOptions) ||
+    !isOption(workStatus, workStatusOptions) ||
+    !isOption(educationalAttainment, educationalAttainmentOptions) ||
+    !isOption(registeredVoter, registeredVoterOptions)
+  ) {
+    return {
+      error: "Select a valid option for each required demographic field.",
+    };
+  }
+
+  const isGraduate =
+    educationalAttainment === "College Graduate" ||
+    educationalAttainment === "Doctorate Graduate";
+  let validatedEducationLevel: EducationLevel | null = null;
+  if (isGraduate) {
+    if (educationLevel || yearOrGradeLevel) {
+      return {
+        error:
+          "Education level and year or grade must be omitted for college and doctorate graduates.",
+      };
+    }
+  } else {
+    if (!isEducationLevel(educationLevel) || !yearOrGradeLevel) {
+      return {
+        error: "Select an education level and year or grade before submitting.",
+      };
+    }
+    if (
+      educationalAttainment === "Highschool Graduate" &&
+      educationLevel !== "college"
+    ) {
+      return {
+        error:
+          "Highschool graduates can only select college as their education level.",
+      };
+    }
+    validatedEducationLevel = educationLevel;
+  }
+
+  if (
+    (religion === "Other" &&
+      (!religionOther || religionOther.length > 100)) ||
+    (religion !== "Other" && religionOther)
+  ) {
+    return {
+      error:
+        'Specify your religion when selecting "Other" (maximum 100 characters).',
+    };
   }
 
   if ("error" in schoolAssessment) {
@@ -251,9 +334,17 @@ export async function submitEducationalAssistanceApplication(
       applicant_email: applicant.user.email,
       contact_number: contactNumber,
       zone,
-      education_level: educationLevel,
+      religion,
+      religion_other: religionOther,
+      civil_status: civilStatus,
+      youth_age_group: youthAgeGroup,
+      youth_classification: youthClassification,
+      work_status: workStatus,
+      educational_attainment: educationalAttainment,
+      registered_voter: registeredVoter,
+      education_level: validatedEducationLevel,
       school_name: schoolName,
-      year_or_grade_level: yearOrGradeLevel,
+      year_or_grade_level: isGraduate ? null : yearOrGradeLevel,
       school_assessment_path: uploads.storedPaths.school_assessment_path,
       school_id_front_path: uploads.storedPaths.school_id_front_path,
       school_id_back_path: uploads.storedPaths.school_id_back_path,

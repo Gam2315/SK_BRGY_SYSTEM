@@ -1,3 +1,13 @@
+import type {
+  CivilStatus,
+  EducationalAttainment,
+  RegisteredVoter,
+  Religion,
+  WorkStatus,
+  YouthAgeGroup,
+  YouthClassification,
+} from "@/lib/education-application-options";
+
 export type EducationLevel = "high_school" | "college";
 export type BarangayZone =
   | "Zone 1"
@@ -15,9 +25,17 @@ export type EducationalAssistanceApplication = {
   applicant_email: string;
   contact_number: string | null;
   zone: BarangayZone | null;
-  education_level: EducationLevel;
+  religion: Religion | null;
+  religion_other: string | null;
+  civil_status: CivilStatus | null;
+  youth_age_group: YouthAgeGroup | null;
+  youth_classification: YouthClassification | null;
+  work_status: WorkStatus | null;
+  educational_attainment: EducationalAttainment | null;
+  registered_voter: RegisteredVoter | null;
+  education_level: EducationLevel | null;
   school_name: string;
-  year_or_grade_level: string;
+  year_or_grade_level: string | null;
   school_assessment_path: string | null;
   school_id_front_path: string | null;
   school_id_back_path: string | null;

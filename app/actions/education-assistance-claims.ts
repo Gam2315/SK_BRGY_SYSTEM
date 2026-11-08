@@ -15,9 +15,9 @@ export type EducationClaimApplicant = {
   applicant_email: string;
   contact_number: string | null;
   zone: BarangayZone | null;
-  education_level: "high_school" | "college";
+  education_level: "high_school" | "college" | null;
   school_name: string;
-  year_or_grade_level: string;
+  year_or_grade_level: string | null;
 };
 
 export type EducationClaimLookupResult = {
